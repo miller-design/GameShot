@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GameShot">
+  <rect width="64" height="64" fill="#121212"/>
+  <!-- Geometric dart tip — neon lime on charcoal -->
+  <path
+    fill="#76ff03"
+    d="M32 8 L46 34 L38 34 L38 42 L42 48 L32 56 L22 48 L26 42 L26 34 L18 34 Z"
+  />
+</svg>

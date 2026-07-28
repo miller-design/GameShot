@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  // Add VITE_* env vars here as needed
+  /** Canonical site origin for Open Graph / Twitter absolute URLs (no trailing slash). */
+  readonly VITE_SITE_URL?: string
 }
 
 interface ImportMeta {

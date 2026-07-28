@@ -1,11 +1,17 @@
 {
   "short_name": "GameShot",
   "name": "GameShot — Darts Counter",
+  "description": "Local-first matchplay darts counter for 501, 701 and 1001. Named for the winning double.",
   "icons": [
     {
       "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
+      "sizes": "48x48",
       "type": "image/x-icon"
+    },
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
     },
     {
       "src": "logo192.png",
