@@ -1,0 +1,16 @@
+{
+  "projectName": "project-starter",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "pnpm",
+  "includeExamples": false,
+  "tailwind": false,
+  "addOnOptions": {},
+  "envVarValues": {},
+  "git": false,
+  "install": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": ["eslint", "nitro"]
+}

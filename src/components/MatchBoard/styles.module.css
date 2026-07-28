@@ -1,0 +1,44 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg);
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    background: var(--color-header);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .toolBtn {
+    flex: 1;
+    min-height: 2.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-accent);
+    }
+  }
+
+  .toolBtnActive {
+    border-color: var(--color-accent);
+    background: var(--color-accent-tint);
+    color: var(--color-text);
+  }
+}

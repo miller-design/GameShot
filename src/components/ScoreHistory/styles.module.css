@@ -1,0 +1,84 @@
+.root {
+  flex: 1;
+  min-height: 8.5rem;
+  overflow: auto;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+
+  .grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .head,
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2.5rem 1fr 1fr;
+  }
+
+  .head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    font-family: var(--font-ui);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+
+    > div {
+      padding: 0.45rem 0.35rem;
+      text-align: center;
+    }
+  }
+
+  .row {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .alt {
+    background: var(--color-history-alt);
+  }
+
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.25rem;
+    padding: 0.3rem 0.25rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    border-right: 1px solid var(--color-border);
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  .toGo {
+    font-weight: var(--fw-bold);
+  }
+
+  .spine {
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+  }
+
+  .inputCell {
+    background: var(--color-accent-tint);
+    color: var(--color-text);
+    box-shadow: inset 0 0 0 2px var(--color-accent);
+  }
+
+  .bust {
+    color: var(--color-bust);
+  }
+}

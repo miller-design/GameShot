@@ -1,0 +1,32 @@
+/* Reset */
+@import './_reset.css';
+
+/* Config files */
+@import './_breakpoints.css';
+@import './_colors.css';
+@import './_fonts.css';
+
+:root {
+  /* Grid */
+  --grid-columns: 12;
+  --grid-gutter: 0.5rem;
+  --grid-margin: 1rem;
+
+  /* Font Weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Line heights */
+  --lh-tightest: 0.85;
+  --lh-tight: 1;
+  --lh-normal: 1.2;
+  --lh-relaxed: 1.5;
+}
+
+@media (--bp-md) {
+  :root {
+    --grid-margin: 2rem;
+  }
+}

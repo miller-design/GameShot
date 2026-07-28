@@ -1,0 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@8..144,100..1000&family=JetBrains+Mono:wght@500;600;700;800&display=swap');
+
+:root {
+  --font-ui: 'Google Sans Flex', system-ui, sans-serif;
+  --font-display: 'Google Sans Flex', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}

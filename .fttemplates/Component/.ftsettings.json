@@ -1,0 +1,4 @@
+{
+  "name": "Component",
+  "openFilesWhenDone": ["index.tsx", "types.ts", "styles.module.css"]
+}

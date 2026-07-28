@@ -1,0 +1,26 @@
+/* Config */
+@import './styles/config/_main.css';
+
+/* Util */
+@import './styles/util/_spacing.css';
+@import './styles/util/_typography.css';
+@import './styles/util/_container.css';
+@import './styles/util/_forms.css';
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}

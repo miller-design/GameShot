@@ -1,0 +1,17 @@
+:root {
+  --color-bg: #121212;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #242424;
+  --color-text: #fafafa;
+  --color-text-muted: #8a8a8a;
+  --color-border: #333333;
+  --color-accent: #76ff03;
+  --color-accent-ink: #0a0a0a;
+  --color-accent-tint: rgb(118 255 3 / 10%);
+  --color-turn: #76ff03;
+  --color-bust: #ff3b3b;
+  --color-focus-ring: rgb(118 255 3 / 28%);
+  --color-header: #0d0d0d;
+  --color-history-alt: #1e1e1e;
+  --color-input-cell: #2a2a00;
+}

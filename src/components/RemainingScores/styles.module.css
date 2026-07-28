@@ -1,0 +1,64 @@
+.root {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.65rem 0.75rem;
+  background: var(--color-header);
+
+  .panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 6.5rem;
+    padding-block: 0.35rem;
+    border-radius: 0.5rem;
+    border: 2px solid transparent;
+    background: var(--color-surface);
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      color 0.2s ease;
+
+    @media (--bp-sm) {
+      min-height: 8rem;
+    }
+
+    @media (--bp-md) {
+      min-height: 9.5rem;
+    }
+  }
+
+  .active {
+    background: var(--color-accent-tint);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+    color: var(--color-text);
+  }
+
+  .bust {
+    animation: bustFlash 0.45s ease;
+  }
+
+  .score {
+    font-family: var(--font-mono);
+    font-size: clamp(3.25rem, 18vw, 7rem);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: var(--lh-tightest);
+    letter-spacing: -0.04em;
+  }
+}
+
+@keyframes bustFlash {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+
+  40% {
+    box-shadow: 0 0 0 4px var(--color-bust);
+    border-color: var(--color-bust);
+  }
+}

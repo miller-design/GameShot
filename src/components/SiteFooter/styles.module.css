@@ -1,0 +1,16 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 1rem var(--grid-margin);
+  border-top: 1px solid rgb(255 255 255 / 6%);
+  background: transparent;
+}
+
+.copy {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}

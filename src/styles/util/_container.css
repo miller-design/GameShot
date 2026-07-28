@@ -1,0 +1,18 @@
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--grid-margin);
+  box-sizing: border-box;
+}
+
+.flex {
+  display: flex;
+  gap: var(--grid-gutter);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), 1fr);
+  gap: var(--grid-gutter);
+}

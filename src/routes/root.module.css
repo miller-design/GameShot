@@ -1,0 +1,15 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgb(118 255 3 / 12%), transparent),
+    var(--color-bg);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}

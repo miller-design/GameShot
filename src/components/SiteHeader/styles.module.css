@@ -1,0 +1,24 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.85rem var(--grid-margin);
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+  background: transparent;
+}
+
+.logo {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-accent);
+  }
+}
