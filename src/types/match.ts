@@ -33,6 +33,12 @@ export type Visit = {
   bust: boolean
   /** True when this visit checked out the leg. */
   checkout: boolean
+  /**
+   * On a checkout visit, how many darts were actually required to finish.
+   * Intermediate visits always represent up to 3 darts, but the finishing
+   * visit can be 1–3 darts depending on the route.
+   */
+  dartsUsed?: 1 | 2 | 3
 }
 
 /** State of the current (or just-finished) leg. */
@@ -60,6 +66,11 @@ export type MatchState = {
   lastBust: boolean
   /** Pending leg win awaiting user acknowledgment. */
   pendingLegWinner: PlayerIndex | null
+  /**
+   * Dart count selection for the pending checkout.
+   * Only relevant when `pendingLegWinner` is set.
+   */
+  pendingLegCheckoutDartsUsed: 1 | 2 | 3 | null
 }
 
 /** Per-player live stats for the current match. */
@@ -70,4 +81,8 @@ export type PlayerStats = {
   threeDartAvg: number
   checkouts: number
   checkoutAttempts: number
+  /** Best non-bust visit score in the match. */
+  highestScore: number | null
+  /** Best successful checkout visit score in the match. */
+  highestCheckout: number | null
 }

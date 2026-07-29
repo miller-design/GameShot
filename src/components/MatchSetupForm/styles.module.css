@@ -20,8 +20,8 @@
   & .title {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: clamp(2rem, 6vw, 2.75rem);
-    font-weight: 800;
+    font-size: clamp(var(--fs-xl), 6vw, 2.75rem);
+    font-weight: var(--fw-extrabold);
     line-height: var(--lh-tight);
     letter-spacing: 0.04em;
     text-transform: uppercase;

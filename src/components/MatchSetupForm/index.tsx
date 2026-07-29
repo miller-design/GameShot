@@ -1,5 +1,6 @@
 import clsx from 'clsx'
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
 import { useMatch } from '#/store/match'

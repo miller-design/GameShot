@@ -37,8 +37,8 @@
 
   & .score {
     font-family: var(--font-mono);
-    font-size: clamp(2.5rem, 10vh, 5.5rem);
-    font-weight: 800;
+    font-size: clamp(var(--fs-2xl), 10vh, 5.5rem);
+    font-weight: var(--fw-extrabold);
     font-variant-numeric: tabular-nums;
     line-height: var(--lh-tightest);
     letter-spacing: -0.04em;

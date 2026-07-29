@@ -20,7 +20,7 @@
     background: var(--color-surface);
     font-family: var(--font-mono);
     font-size: var(--fs-xl);
-    font-weight: 700;
+    font-weight: var(--fw-bold);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
   }

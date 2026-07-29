@@ -4,11 +4,14 @@ import {
   editVisit,
   confirmLeg,
   createMatch,
+  computePlayerStats,
   evaluateVisit,
   isValidVisitScore,
   legsToWin,
+  minDartsForCheckout,
   submitVisit,
   undoVisit,
+  setPendingLegCheckoutDartsUsed,
 } from './scoring'
 import type { MatchConfig } from '#/types/match'
 
@@ -242,6 +245,77 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     state = undoVisit(state)
     expect(state.pendingLegWinner).toBe(null)
     expect(state.currentLeg.remaining[0]).toBe(40)
+  })
+})
+
+describe('minDartsForCheckout', () => {
+  it('returns 1 for one-dart checkouts', () => {
+    expect(minDartsForCheckout(40)).toBe(1) // D20
+    expect(minDartsForCheckout(50)).toBe(1) // Bullseye
+  })
+
+  it('returns 2 for checkouts that can be finished in two darts', () => {
+    expect(minDartsForCheckout(80)).toBe(2) // T10 + D20, D20 + D20, etc.
+  })
+
+  it('returns 3 for checkouts that require three darts', () => {
+    expect(minDartsForCheckout(157)).toBe(3)
+  })
+})
+
+describe('checkout dart counts affect dartsThrown', () => {
+  it('uses pending checkout selection for stats before confirm', () => {
+    let state = createMatch(baseConfig)
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [40, 501],
+      },
+    }
+
+    state = submitVisit(state, 40) // p0 -> 0 checkout (min 1)
+    expect(state.pendingLegWinner).toBe(0)
+
+    expect(computePlayerStats(state, 0).dartsThrown).toBe(1)
+
+    state = setPendingLegCheckoutDartsUsed(state, 2)
+    expect(computePlayerStats(state, 0).dartsThrown).toBe(2)
+  })
+
+  it('persists dartsUsed onto the checkout visit after confirm', () => {
+    let state = createMatch(baseConfig)
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [40, 501],
+      },
+    }
+
+    state = submitVisit(state, 40)
+    state = setPendingLegCheckoutDartsUsed(state, 3)
+    state = confirmLeg(state)
+
+    expect(computePlayerStats(state, 0).dartsThrown).toBe(3)
+    expect(computePlayerStats(state, 0).threeDartAvg).toBe(40)
+  })
+
+  it('rejects setting a value below the minimum', () => {
+    let state = createMatch(baseConfig)
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [80, 501],
+      },
+    }
+
+    state = submitVisit(state, 80) // min is 2
+    expect(state.pendingLegCheckoutDartsUsed).toBe(2)
+
+    state = setPendingLegCheckoutDartsUsed(state, 1)
+    expect(state.pendingLegCheckoutDartsUsed).toBe(2)
   })
 })
 

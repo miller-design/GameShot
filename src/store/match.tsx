@@ -13,6 +13,7 @@ import {
   createMatch,
   editVisit as editVisitPure,
   submitVisit as submitVisitPure,
+  setPendingLegCheckoutDartsUsed as setPendingLegCheckoutDartsUsedPure,
   undoVisit as undoVisitPure,
 } from '#/lib/darts/scoring'
 import type { MatchConfig, MatchState } from '#/types/match'
@@ -27,6 +28,7 @@ type MatchContextValue = {
   editVisit: (visitIndex: number, scored: number) => void
   undo: () => void
   confirmLeg: () => void
+  setPendingLegCheckoutDartsUsed: (dartsUsed: 1 | 2 | 3) => void
   clearMatch: () => void
   clearBustFlag: () => void
 }
@@ -168,6 +170,18 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const setPendingLegCheckoutDartsUsed = useCallback(
+    (dartsUsed: 1 | 2 | 3) => {
+      setMatch((prev) => {
+        if (!prev) return prev
+        const next = setPendingLegCheckoutDartsUsedPure(prev, dartsUsed)
+        persistMatch(next)
+        return next
+      })
+    },
+    [],
+  )
+
   /**
    * Clears the active match (exit / new match).
    *
@@ -203,6 +217,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       editVisit,
       undo,
       confirmLeg,
+      setPendingLegCheckoutDartsUsed,
       clearMatch,
       clearBustFlag,
     }),
@@ -214,6 +229,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       editVisit,
       undo,
       confirmLeg,
+      setPendingLegCheckoutDartsUsed,
       clearMatch,
       clearBustFlag,
     ],

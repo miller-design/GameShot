@@ -43,7 +43,7 @@
   & .legs {
     font-family: var(--font-mono);
     font-size: var(--fs-lg);
-    font-weight: 800;
+    font-weight: var(--fw-extrabold);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
     white-space: nowrap;

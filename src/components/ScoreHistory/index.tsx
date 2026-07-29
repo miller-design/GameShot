@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 
 import {
   buildHistoryRows,
@@ -41,7 +42,7 @@ const ScoreHistory = ({
   const rows = buildHistoryRows(currentLeg)
   const nextRow = nextInputRowIndex(currentLeg)
   const thrower = currentLeg.currentPlayer
-  const canEdit = match.matchWinner === null
+  const canEdit = match.matchWinner === null && match.pendingLegWinner === null
   const canHighlight =
     match.pendingLegWinner === null &&
     match.matchWinner === null &&
@@ -80,6 +81,7 @@ const ScoreHistory = ({
   useEffect(() => {
     const throwArea = throwAreaRef.current
     if (!throwArea) return
+    const safeThrowArea = throwArea
 
     /**
      * Sizes throw rows so five rows evenly fill the throw area.
@@ -88,7 +90,7 @@ const ScoreHistory = ({
      * measureThrowRows()
      */
     function measureThrowRows() {
-      const rowHeight = throwArea.clientHeight / VISIBLE_THROW_ROWS
+      const rowHeight = safeThrowArea.clientHeight / VISIBLE_THROW_ROWS
       setThrowRowHeight(rowHeight)
     }
 
@@ -124,7 +126,7 @@ const ScoreHistory = ({
         style={
           throwRowHeight === null
             ? undefined
-            : { '--throw-row-height': `${throwRowHeight}px` }
+            : ({ '--throw-row-height': `${throwRowHeight}px` } as CSSProperties)
         }
       >
         {displayRows.map((row, index) => {

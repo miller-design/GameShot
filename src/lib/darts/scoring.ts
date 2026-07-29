@@ -73,6 +73,7 @@ export function createMatch(config: MatchConfig): MatchState {
     matchWinner: null,
     lastBust: false,
     pendingLegWinner: null,
+    pendingLegCheckoutDartsUsed: null,
   }
 }
 
@@ -113,6 +114,49 @@ export function isValidCheckout(remaining: number): boolean {
   if (!Number.isInteger(remaining)) return false
   if (remaining < 2 || remaining > 170) return false
   return !IMPOSSIBLE_CHECKOUTS.has(remaining)
+}
+
+/**
+ * Returns the minimum number of darts required to finish `checkout` on a
+ * double-out (bull counts as a double).
+ *
+ * The app records checkout only as a *visit total* (0–180). The minimum
+ * therefore depends only on the checkout number itself.
+ */
+export function minDartsForCheckout(
+  checkout: number,
+): 1 | 2 | 3 {
+  if (!isValidCheckout(checkout)) return 3
+
+  // 1-dart checkout: bullseye (50) or any double (2..40 even)
+  if (checkout === 50) return 1
+  if (checkout % 2 === 0) {
+    const half = checkout / 2
+    if (half >= 1 && half <= 20) return 1
+  }
+
+  const finishingOneDart = new Set<number>()
+  for (let i = 1; i <= 20; i++) finishingOneDart.add(i * 2) // D1..D20
+  finishingOneDart.add(50) // bull counts as a "double"
+
+  // Any score reachable with one dart.
+  const oneDartScores = new Set<number>()
+  for (let i = 1; i <= 20; i++) oneDartScores.add(i) // S1..S20
+  oneDartScores.add(25) // outer bull
+  oneDartScores.add(50) // inner bull
+  for (let i = 1; i <= 20; i++) {
+    oneDartScores.add(i * 2) // doubles
+    oneDartScores.add(i * 3) // triples
+  }
+
+  // 2-dart checkout exists if checkout = (one-dart score) + (double/bull)
+  for (const last of finishingOneDart) {
+    const first = checkout - last
+    if (first === 0) continue
+    if (oneDartScores.has(first)) return 2
+  }
+
+  return 3
 }
 
 /**
@@ -201,6 +245,7 @@ export function submitVisit(state: MatchState, scored: number): MatchState {
       },
       lastBust: false,
       pendingLegWinner: player,
+      pendingLegCheckoutDartsUsed: minDartsForCheckout(scored),
     }
   }
 
@@ -234,11 +279,26 @@ export function confirmLeg(state: MatchState): MatchState {
     return state
   }
 
+  const checkoutVisit = state.currentLeg.visits.find(
+    (v) => v.player === winner && v.checkout,
+  )
+  const checkoutDartsUsed =
+    state.pendingLegCheckoutDartsUsed ??
+    (checkoutVisit ? minDartsForCheckout(checkoutVisit.scored) : 3)
+
+  const updatedVisits: Visit[] = state.currentLeg.visits.map((v) => {
+    if (v.player === winner && v.checkout) {
+      return { ...v, dartsUsed: checkoutDartsUsed }
+    }
+    return v
+  })
+
   const legsWon: [number, number] = [...state.legsWon]
   legsWon[winner] += 1
 
   const finishedLeg: LegState = {
     ...state.currentLeg,
+    visits: updatedVisits,
     winner,
   }
 
@@ -251,6 +311,7 @@ export function confirmLeg(state: MatchState): MatchState {
       completedLegs: [...state.completedLegs, finishedLeg],
       matchWinner: winner,
       pendingLegWinner: null,
+      pendingLegCheckoutDartsUsed: null,
       lastBust: false,
     }
   }
@@ -264,7 +325,40 @@ export function confirmLeg(state: MatchState): MatchState {
     completedLegs: [...state.completedLegs, finishedLeg],
     currentLeg: createLeg(state.config.startingScore, loser),
     pendingLegWinner: null,
+    pendingLegCheckoutDartsUsed: null,
     lastBust: false,
+  }
+}
+
+/**
+ * Updates the user's selection for how many darts were used on the pending
+ * checkout.
+ *
+ * @param state - Match state with `pendingLegWinner` set
+ * @param dartsUsed - User-selected darts used on the checkout visit
+ *
+ * @example
+ * setPendingLegCheckoutDartsUsed(state, 2)
+ */
+export function setPendingLegCheckoutDartsUsed(
+  state: MatchState,
+  dartsUsed: 1 | 2 | 3,
+): MatchState {
+  if (state.pendingLegWinner === null) return state
+
+  const checkoutVisit = state.currentLeg.visits.find(
+    (v) => v.player === state.pendingLegWinner && v.checkout,
+  )
+  if (!checkoutVisit) return state
+
+  const min = minDartsForCheckout(checkoutVisit.scored)
+  if (dartsUsed < min) return state
+
+  if (state.pendingLegCheckoutDartsUsed === dartsUsed) return state
+
+  return {
+    ...state,
+    pendingLegCheckoutDartsUsed: dartsUsed,
   }
 }
 
@@ -304,6 +398,7 @@ export function undoVisit(state: MatchState): MatchState {
       winner: null,
     },
     pendingLegWinner: null,
+    pendingLegCheckoutDartsUsed: null,
     lastBust: false,
   }
 }
@@ -348,6 +443,7 @@ export function previewEditVisit(
 
   let winner: PlayerIndex | null = null
   let pendingLegWinner: PlayerIndex | null = null
+  let pendingLegCheckoutDartsUsed: 1 | 2 | 3 | null = null
   let lastBust = false
 
   for (let i = visitIndex; i < leg.visits.length; i++) {
@@ -371,6 +467,7 @@ export function previewEditVisit(
     if (result.checkout) {
       winner = player
       pendingLegWinner = player
+      pendingLegCheckoutDartsUsed = minDartsForCheckout(nextScored)
       lastBust = false
       break // A checkout ends the leg immediately.
     }
@@ -397,6 +494,7 @@ export function previewEditVisit(
       winner,
     },
     pendingLegWinner,
+    pendingLegCheckoutDartsUsed,
     lastBust,
   }
 }
@@ -418,6 +516,7 @@ export function editWouldCheckoutOtherVisit(
   visitIndex: number,
   preview: MatchState,
 ): boolean {
+  void state
   const checkoutIndex = preview.currentLeg.visits.findIndex((v) => v.checkout)
   if (checkoutIndex === -1) return false
   // Allow correcting the finishing visit itself; block cascading checkouts.
@@ -526,6 +625,9 @@ export function computePlayerStats(
   state: MatchState,
   player: PlayerIndex,
 ): PlayerStats {
+  const pendingWinner = state.pendingLegWinner
+  const pendingCheckoutDartsUsed = state.pendingLegCheckoutDartsUsed
+
   const allLegs = [...state.completedLegs]
   if (state.pendingLegWinner === null && state.matchWinner === null) {
     allLegs.push(state.currentLeg)
@@ -538,13 +640,40 @@ export function computePlayerStats(
   let lastScore: number | null = null
   let checkouts = 0
   let checkoutAttempts = 0
+  let highestScore: number | null = null
+  let highestCheckout: number | null = null
 
   for (const leg of allLegs) {
     for (const visit of leg.visits) {
       if (visit.player !== player) continue
-      dartsThrown += 3
+      const dartsForVisit = (() => {
+        // Only checkout visits can be confirmed as 1–2–3 darts.
+        if (visit.checkout) {
+          if (visit.dartsUsed !== undefined) return visit.dartsUsed
+          if (
+            pendingWinner !== null &&
+            pendingCheckoutDartsUsed != null &&
+            visit.player === pendingWinner
+          ) {
+            return pendingCheckoutDartsUsed
+          }
+        }
+        return 3
+      })()
+
+      dartsThrown += dartsForVisit
       if (!visit.bust) {
         pointsScored += visit.scored
+        highestScore =
+          highestScore === null
+            ? visit.scored
+            : Math.max(highestScore, visit.scored)
+      }
+      if (visit.checkout) {
+        highestCheckout =
+          highestCheckout === null
+            ? visit.scored
+            : Math.max(highestCheckout, visit.scored)
       }
       lastScore = visit.scored
       // Double-out attempt: remaining before visit was <= 170 and visit was toward checkout range
@@ -573,6 +702,8 @@ export function computePlayerStats(
     threeDartAvg: Math.round(threeDartAvg * 100) / 100,
     checkouts,
     checkoutAttempts,
+    highestScore,
+    highestCheckout,
   }
 }
 
