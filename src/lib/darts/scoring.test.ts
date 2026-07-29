@@ -16,6 +16,7 @@ import {
 import type { MatchConfig } from '#/types/match'
 
 const baseConfig: MatchConfig = {
+  playMode: 'matchplay',
   playerNames: ['Alice', 'Bob'],
   startingScore: 501,
   mode: 'first-to',
@@ -417,5 +418,44 @@ describe('editVisit', () => {
 
     expect(state).toBe(before)
     expect(state.currentLeg.visits).toHaveLength(9)
+  })
+})
+
+describe('practice mode', () => {
+  const practiceConfig: MatchConfig = {
+    playMode: 'practice',
+    playerNames: ['Solo', ''],
+    startingScore: 501,
+    mode: 'first-to',
+    legsTarget: 1,
+    firstThrower: 0,
+  }
+
+  it('keeps currentPlayer on 0 after a normal visit', () => {
+    let state = createMatch(practiceConfig)
+    state = submitVisit(state, 60)
+    expect(state.currentLeg.currentPlayer).toBe(0)
+    expect(state.currentLeg.remaining[0]).toBe(441)
+    expect(state.currentLeg.remaining[1]).toBe(501)
+  })
+
+  it('never sets matchWinner on confirmLeg', () => {
+    let state = createMatch(practiceConfig)
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [40, 501],
+        visits: [],
+      },
+    }
+    state = submitVisit(state, 40)
+    expect(state.pendingLegWinner).toBe(0)
+    state = confirmLeg(state)
+    expect(state.matchWinner).toBeNull()
+    expect(state.legsWon[0]).toBe(1)
+    expect(state.pendingLegWinner).toBeNull()
+    expect(state.currentLeg.remaining[0]).toBe(501)
+    expect(state.currentLeg.currentPlayer).toBe(0)
   })
 })

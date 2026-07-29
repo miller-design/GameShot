@@ -8,12 +8,13 @@ import MatchStats from '#/components/MatchStats'
 import RemainingScores from '#/components/RemainingScores'
 import ScoreHistory from '#/components/ScoreHistory'
 import ScorePad from '#/components/ScorePad'
-import { useMatch } from '#/store/match'
+import { chooseBotVisit } from '#/lib/darts/bot'
 import {
   editWouldBustLatestVisit,
   editWouldCheckoutOtherVisit,
   previewEditVisit,
 } from '#/lib/darts/scoring'
+import { useMatch } from '#/store/match'
 import type { MatchState } from '#/types/match'
 
 import styles from './styles.module.css'
@@ -25,6 +26,12 @@ type MatchBoardProps = {
 /** How long edit-rejection toasts stay visible. */
 const EDIT_TOAST_MS = 5000
 
+/** Delay before the computer submits a visit. */
+const BOT_THINK_MS = 750
+
+/** Delay before auto-confirming a computer checkout. */
+const BOT_CONFIRM_MS = 900
+
 /**
  * Full match scoring board — history, remaining, pad, overlays.
  *
@@ -34,7 +41,14 @@ const EDIT_TOAST_MS = 5000
  * <MatchBoard match={match} />
  */
 const MatchBoard = ({ match }: MatchBoardProps) => {
-  const { submitVisit, editVisit, undo, clearMatch, clearBustFlag } = useMatch()
+  const {
+    submitVisit,
+    editVisit,
+    undo,
+    clearMatch,
+    clearBustFlag,
+    confirmLeg,
+  } = useMatch()
   const navigate = useNavigate()
   const [statsOpen, setStatsOpen] = useState(false)
   const statsBtnRef = useRef<HTMLButtonElement>(null)
@@ -44,9 +58,21 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
     null,
   )
 
+  const isBotTurn =
+    match.config.playMode === 'vs-computer' &&
+    match.currentLeg.currentPlayer === 1 &&
+    match.pendingLegWinner === null &&
+    match.matchWinner === null
+
+  const isBotPendingCheckout =
+    match.config.playMode === 'vs-computer' &&
+    match.pendingLegWinner === 1 &&
+    match.matchWinner === null
+
   const inputLocked =
     match.matchWinner !== null ||
-    (match.pendingLegWinner !== null && editingVisitIndex === null)
+    (match.pendingLegWinner !== null && editingVisitIndex === null) ||
+    isBotTurn
 
   /**
    * Clears any active edit-rejection toast.
@@ -124,6 +150,32 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
     return () => window.clearTimeout(t)
   }, [clearEditError, editErrorMessage])
 
+  // Computer visit loop — schedules a legal visit while it is the bot's turn.
+  useEffect(() => {
+    if (!isBotTurn) return
+    const difficulty = match.config.botDifficulty ?? 'medium'
+    const remaining = match.currentLeg.remaining[1]
+    const timer = window.setTimeout(() => {
+      submitVisit(chooseBotVisit(remaining, difficulty))
+    }, BOT_THINK_MS)
+    return () => window.clearTimeout(timer)
+  }, [
+    isBotTurn,
+    match.config.botDifficulty,
+    match.currentLeg.remaining,
+    match.currentLeg.visits.length,
+    submitVisit,
+  ])
+
+  // Auto-confirm computer checkouts so the human does not tap for the bot.
+  useEffect(() => {
+    if (!isBotPendingCheckout) return
+    const timer = window.setTimeout(() => {
+      confirmLeg()
+    }, BOT_CONFIRM_MS)
+    return () => window.clearTimeout(timer)
+  }, [isBotPendingCheckout, match.currentLeg.visits.length, confirmLeg])
+
   /**
    * Selects a visit for editing, or clears selection if tapped again.
    *
@@ -134,6 +186,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
    */
   const handleEditVisit = useCallback(
     (visitIndex: number) => {
+      if (isBotTurn || isBotPendingCheckout) return
       clearEditError()
       if (editingVisitIndex === visitIndex) {
         setEditingVisitIndex(null)
@@ -142,7 +195,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
       }
       setEditingVisitIndex(visitIndex)
     },
-    [clearEditError, editingVisitIndex],
+    [clearEditError, editingVisitIndex, isBotPendingCheckout, isBotTurn],
   )
 
   /**
@@ -217,7 +270,9 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
               onClick={undo}
               disabled={
                 match.currentLeg.visits.length === 0 ||
-                match.matchWinner !== null
+                match.matchWinner !== null ||
+                isBotTurn ||
+                isBotPendingCheckout
               }
             >
               Undo
@@ -252,7 +307,8 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
       </section>
 
       <MatchStats match={match} open={statsOpen} onClose={handleCloseStats} />
-      <MatchResult match={match} />
+      {/* Hide checkout UI while the computer auto-confirms its own finish. */}
+      {!isBotPendingCheckout ? <MatchResult match={match} /> : null}
     </div>
   )
 }

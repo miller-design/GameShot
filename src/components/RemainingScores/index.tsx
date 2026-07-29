@@ -34,6 +34,7 @@ const RemainingScores = ({
 }: RemainingScoresProps) => {
   const thrower = match.currentLeg.currentPlayer
   const [r0, r1] = match.currentLeg.remaining
+  const isPractice = match.config.playMode === 'practice'
   const inactive =
     match.pendingLegWinner !== null || match.matchWinner !== null
   const lastVisit = match.currentLeg.visits.at(-1)
@@ -56,7 +57,9 @@ const RemainingScores = ({
   }, [bustFlash, onBustFlashEnd])
 
   return (
-    <div className={clsx(styles.root, className)}>
+    <div
+      className={clsx(styles.root, isPractice && styles.practice, className)}
+    >
       <div
         className={clsx(
           styles.panel,
@@ -66,15 +69,17 @@ const RemainingScores = ({
       >
         <span className={styles.score}>{displayR0}</span>
       </div>
-      <div
-        className={clsx(
-          styles.panel,
-          !inactive && thrower === 1 && styles.active,
-          bustedPlayer === 1 && styles.bust,
-        )}
-      >
-        <span className={styles.score}>{displayR1}</span>
-      </div>
+      {!isPractice ? (
+        <div
+          className={clsx(
+            styles.panel,
+            !inactive && thrower === 1 && styles.active,
+            bustedPlayer === 1 && styles.bust,
+          )}
+        >
+          <span className={styles.score}>{displayR1}</span>
+        </div>
+      ) : null}
     </div>
   )
 }

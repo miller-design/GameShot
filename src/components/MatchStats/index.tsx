@@ -25,7 +25,12 @@ type MatchStatsProps = {
  * <MatchStats match={match} open={true} onClose={() => setOpen(false)} />
  */
 const MatchStats = ({ match, open, onClose, className }: MatchStatsProps) => {
-  const stats = [computePlayerStats(match, 0), computePlayerStats(match, 1)] as const
+  const isPractice = match.config.playMode === 'practice'
+  const players = isPractice ? ([0] as const) : ([0, 1] as const)
+  const stats = {
+    0: computePlayerStats(match, 0),
+    1: computePlayerStats(match, 1),
+  } as const
 
   return (
     <SlidePanel
@@ -49,10 +54,12 @@ const MatchStats = ({ match, open, onClose, className }: MatchStatsProps) => {
         </div>
       }
     >
-      <div className={styles.grid}>
-        {([0, 1] as const).map((player) => (
+      <div className={clsx(styles.grid, isPractice && styles.solo)}>
+        {players.map((player) => (
           <div key={player} className={styles.card}>
-            <h3 className={styles.name}>{match.config.playerNames[player]}</h3>
+            <h3 className={styles.name}>
+              {match.config.playerNames[player] || 'Player'}
+            </h3>
             <dl className={styles.list}>
               <div>
                 <dt>3-dart avg</dt>

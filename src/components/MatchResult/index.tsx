@@ -55,12 +55,17 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
   }
 
   const needed = legsToWin(match.config)
+  const isPractice = match.config.playMode === 'practice'
   const decidingLeg =
-    legWinner !== null && match.legsWon[legWinner] + 1 >= needed
+    !isPractice &&
+    legWinner !== null &&
+    match.legsWon[legWinner] + 1 >= needed
   const isPendingCheckout = matchWinner === null && legWinner !== null
 
   const winnerIndex: PlayerIndex = (matchWinner ?? legWinner) as PlayerIndex
-  const winnerName = match.config.playerNames[winnerIndex]
+  const winnerName =
+    match.config.playerNames[winnerIndex] ||
+    (winnerIndex === 0 ? 'Player' : 'Computer')
   const isMatchComplete = matchWinner !== null
   const playerStats = isMatchComplete
     ? ([computePlayerStats(match, 0), computePlayerStats(match, 1)] as const)
@@ -177,8 +182,14 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
       ) : (
         <>
           <p className={styles.eyebrow}>Game shot</p>
-          <h2 className={styles.title}>{winnerName}</h2>
-          {decidingLeg ? (
+          <h2 className={styles.title}>
+            {isPractice ? 'Leg complete' : winnerName}
+          </h2>
+          {isPractice ? (
+            <p className={styles.meta}>
+              Legs completed: {match.legsWon[0]} — confirm checkout
+            </p>
+          ) : decidingLeg ? (
             <p className={styles.meta}>Match point — confirm checkout</p>
           ) : (
             <p className={styles.meta}>Leg won — confirm checkout</p>
@@ -247,8 +258,9 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
               onClick={handleConfirmCheckout}
               disabled={!isPendingCheckout}
             >
-              Confirm game shot ({selectedCheckoutDartsUsed} darts)
-              {decidingLeg ? ' (match)' : ''}
+              {isPractice
+                ? `Confirm game shot (${selectedCheckoutDartsUsed} darts)`
+                : `Confirm game shot (${selectedCheckoutDartsUsed} darts)${decidingLeg ? ' (match)' : ''}`}
             </button>
             <button
               type="button"

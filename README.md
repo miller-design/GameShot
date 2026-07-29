@@ -25,7 +25,8 @@ Dev server runs on [http://localhost:5010](http://localhost:5010).
 
 ## Features
 
-- Match setup: player names, starting score, first-to / best-of legs
+- Play modes: matchplay (two humans), endless practice, vs computer (Easy / Medium / Hard)
+- Match setup: player names, starting score, first-to / best-of legs, computer level
 - Target-style board: scored / to-go history, dart spine, large remaining scores
 - Clear turn indicators (header marker + neon active panel + input cell)
 - Touch score pad + desktop keyboard (digits, Enter, Backspace, Escape)
@@ -37,7 +38,7 @@ Dev server runs on [http://localhost:5010](http://localhost:5010).
 ```
 src/
   components/   # Match UI (setup, board, pad, stats, result)
-  lib/darts/    # Pure scoring engine + tests
+  lib/darts/    # Pure scoring engine, legal visit table, bot + tests
   routes/       # / (setup), /match (board)
   store/        # MatchProvider + session persistence
   styles/       # Tokens, forms, breakpoints

@@ -16,7 +16,7 @@ import {
   setPendingLegCheckoutDartsUsed as setPendingLegCheckoutDartsUsedPure,
   undoVisit as undoVisitPure,
 } from '#/lib/darts/scoring'
-import type { MatchConfig, MatchState } from '#/types/match'
+import type { MatchConfig, MatchState, PlayMode } from '#/types/match'
 
 const STORAGE_KEY = 'gameshot-match'
 
@@ -35,6 +35,39 @@ type MatchContextValue = {
 
 const MatchContext = createContext<MatchContextValue | null>(null)
 
+const VALID_PLAY_MODES: ReadonlySet<PlayMode> = new Set([
+  'matchplay',
+  'practice',
+  'vs-computer',
+])
+
+/**
+ * Normalizes persisted match JSON so older sessions without playMode still load.
+ *
+ * @param raw - Parsed sessionStorage value
+ * @returns MatchState with defaults applied, or null if unusable
+ *
+ * @example
+ * normalizeStoredMatch(JSON.parse(raw))
+ */
+function normalizeStoredMatch(raw: unknown): MatchState | null {
+  if (!raw || typeof raw !== 'object') return null
+  const state = raw as MatchState
+  if (!state.config || typeof state.config !== 'object') return null
+
+  const playMode = VALID_PLAY_MODES.has(state.config.playMode)
+    ? state.config.playMode
+    : 'matchplay'
+
+  return {
+    ...state,
+    config: {
+      ...state.config,
+      playMode,
+    },
+  }
+}
+
 /**
  * Reads persisted match state from sessionStorage (client-only).
  *
@@ -48,7 +81,7 @@ function loadStoredMatch(): MatchState | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as MatchState
+    return normalizeStoredMatch(JSON.parse(raw) as unknown)
   } catch {
     return null
   }
@@ -100,7 +133,14 @@ export function MatchProvider({ children }: { children: ReactNode }) {
    * @param config - Match setup choices
    *
    * @example
-   * startMatch({ playerNames: ['A','B'], startingScore: 501, mode: 'best-of', legsTarget: 5, firstThrower: 0 })
+   * startMatch({
+   *   playMode: 'matchplay',
+   *   playerNames: ['A','B'],
+   *   startingScore: 501,
+   *   mode: 'best-of',
+   *   legsTarget: 5,
+   *   firstThrower: 0,
+   * })
    */
   const startMatch = useCallback((config: MatchConfig) => {
     const next = createMatch(config)

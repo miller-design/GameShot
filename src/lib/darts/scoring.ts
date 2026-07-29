@@ -57,6 +57,7 @@ export function createLeg(
  *
  * @example
  * createMatch({
+ *   playMode: 'matchplay',
  *   playerNames: ['Alice', 'Bob'],
  *   startingScore: 501,
  *   mode: 'best-of',
@@ -249,7 +250,9 @@ export function submitVisit(state: MatchState, scored: number): MatchState {
     }
   }
 
-  const nextPlayer: PlayerIndex = player === 0 ? 1 : 0
+  // Practice is solo — never advance to player 1.
+  const nextPlayer: PlayerIndex =
+    state.config.playMode === 'practice' ? 0 : player === 0 ? 1 : 0
 
   return {
     ...state,
@@ -300,6 +303,19 @@ export function confirmLeg(state: MatchState): MatchState {
     ...state.currentLeg,
     visits: updatedVisits,
     winner,
+  }
+
+  // Practice never ends the session — legsWon[0] tracks legs completed.
+  if (state.config.playMode === 'practice') {
+    return {
+      ...state,
+      legsWon,
+      completedLegs: [...state.completedLegs, finishedLeg],
+      currentLeg: createLeg(state.config.startingScore, 0),
+      pendingLegWinner: null,
+      pendingLegCheckoutDartsUsed: null,
+      lastBust: false,
+    }
   }
 
   const needed = legsToWin(state.config)

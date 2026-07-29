@@ -93,6 +93,7 @@ const ScoreHistory = ({
   inputBuffer = '',
 }: ScoreHistoryProps) => {
   const { currentLeg } = match
+  const isPractice = match.config.playMode === 'practice'
   const rows = buildHistoryRows(currentLeg)
   const nextRow = nextInputRowIndex(currentLeg)
   const thrower = currentLeg.currentPlayer
@@ -168,13 +169,19 @@ const ScoreHistory = ({
   }, [currentLeg.visits.length, nextRow, throwRowHeight])
 
   return (
-    <div className={clsx(styles.root, className)}>
+    <div
+      className={clsx(styles.root, isPractice && styles.practice, className)}
+    >
       <div className={styles.head} role="row">
         <div role="columnheader">Scored</div>
         <div role="columnheader">To Go</div>
         <div role="columnheader" className={styles.spine} />
-        <div role="columnheader">Scored</div>
-        <div role="columnheader">To Go</div>
+        {!isPractice ? (
+          <>
+            <div role="columnheader">Scored</div>
+            <div role="columnheader">To Go</div>
+          </>
+        ) : null}
       </div>
 
       <div
@@ -190,10 +197,10 @@ const ScoreHistory = ({
       >
         {displayRows.map((row, index) => {
           const isNextP0 = thrower === 0 && index === nextRow
-          const isNextP1 = thrower === 1 && index === nextRow
+          const isNextP1 = !isPractice && thrower === 1 && index === nextRow
           const highlightP0 = canHighlight && isNextP0
           const highlightP1 = canHighlight && isNextP1
-          const showSpine = row.p0 !== null || row.p1 !== null
+          const showSpine = row.p0 !== null || (!isPractice && row.p1 !== null)
           const p0AbsIndex = row.p0 ? p0VisitAbsIndices[index] ?? null : null
           const p1AbsIndex = row.p1 ? p1VisitAbsIndices[index] ?? null : null
           const p0EditPreview =
@@ -212,7 +219,11 @@ const ScoreHistory = ({
           return (
             <div
               key={index}
-              className={clsx(styles.row, styles.throwRow, index % 2 === 1 && styles.alt)}
+              className={clsx(
+                styles.row,
+                styles.throwRow,
+                index % 2 === 1 && styles.alt,
+              )}
               role="row"
             >
               <div
@@ -222,7 +233,7 @@ const ScoreHistory = ({
                   p0AbsIndex !== null &&
                     p0AbsIndex === editingVisitIndex &&
                     styles.editSelected,
-                  (row.p0?.bust && !p0ScoredPreview) && styles.bust,
+                  row.p0?.bust && !p0ScoredPreview && styles.bust,
                   p0ScoredPreview?.bust && styles.bust,
                 )}
                 role="cell"
@@ -233,7 +244,9 @@ const ScoreHistory = ({
                 }
               >
                 {p0ScoredPreview ? (
-                  <span className={styles.previewScore}>{p0ScoredPreview.scored}</span>
+                  <span className={styles.previewScore}>
+                    {p0ScoredPreview.scored}
+                  </span>
                 ) : row.p0 ? (
                   <button
                     type="button"
@@ -269,57 +282,63 @@ const ScoreHistory = ({
               <div className={clsx(styles.cell, styles.spine)} role="cell">
                 {showSpine ? row.dartCount : ''}
               </div>
-              <div
-                className={clsx(
-                  styles.cell,
-                  highlightP1 && styles.inputCell,
-                  p1AbsIndex !== null &&
-                    p1AbsIndex === editingVisitIndex &&
-                    styles.editSelected,
-                  (row.p1?.bust && !p1ScoredPreview) && styles.bust,
-                  p1ScoredPreview?.bust && styles.bust,
-                )}
-                role="cell"
-                onClick={
-                  isNextP1 && editingVisitIndex !== null
-                    ? onCancelEdit
-                    : undefined
-                }
-              >
-                {p1ScoredPreview ? (
-                  <span className={styles.previewScore}>{p1ScoredPreview.scored}</span>
-                ) : row.p1 ? (
-                  <button
-                    type="button"
-                    className={styles.scoredButton}
-                    disabled={!canEdit}
-                    onClick={() => {
-                      if (p1AbsIndex === null) return
-                      onEditVisit(p1AbsIndex)
-                    }}
-                    aria-label={`Edit scored visit${row.p1.bust ? ' (bust)' : ''}: ${row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored}`}
-                    role="presentation"
+              {!isPractice ? (
+                <>
+                  <div
+                    className={clsx(
+                      styles.cell,
+                      highlightP1 && styles.inputCell,
+                      p1AbsIndex !== null &&
+                        p1AbsIndex === editingVisitIndex &&
+                        styles.editSelected,
+                      row.p1?.bust && !p1ScoredPreview && styles.bust,
+                      p1ScoredPreview?.bust && styles.bust,
+                    )}
+                    role="cell"
+                    onClick={
+                      isNextP1 && editingVisitIndex !== null
+                        ? onCancelEdit
+                        : undefined
+                    }
                   >
-                    {row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored}
-                  </button>
-                ) : (
-                  ''
-                )}
-              </div>
-              <div
-                className={clsx(
-                  styles.cell,
-                  styles.toGo,
-                  p1ScoredPreview?.bust && styles.bust,
-                )}
-                role="cell"
-              >
-                {p1ScoredPreview
-                  ? p1ScoredPreview.toGo
-                  : row.p1
-                    ? row.p1.remaining
-                    : ''}
-              </div>
+                    {p1ScoredPreview ? (
+                      <span className={styles.previewScore}>
+                        {p1ScoredPreview.scored}
+                      </span>
+                    ) : row.p1 ? (
+                      <button
+                        type="button"
+                        className={styles.scoredButton}
+                        disabled={!canEdit}
+                        onClick={() => {
+                          if (p1AbsIndex === null) return
+                          onEditVisit(p1AbsIndex)
+                        }}
+                        aria-label={`Edit scored visit${row.p1.bust ? ' (bust)' : ''}: ${row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored}`}
+                        role="presentation"
+                      >
+                        {row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored}
+                      </button>
+                    ) : (
+                      ''
+                    )}
+                  </div>
+                  <div
+                    className={clsx(
+                      styles.cell,
+                      styles.toGo,
+                      p1ScoredPreview?.bust && styles.bust,
+                    )}
+                    role="cell"
+                  >
+                    {p1ScoredPreview
+                      ? p1ScoredPreview.toGo
+                      : row.p1
+                        ? row.p1.remaining
+                        : ''}
+                  </div>
+                </>
+              ) : null}
             </div>
           )
         })}

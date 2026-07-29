@@ -36,6 +36,12 @@
   @media (--bp-sm) {
     grid-template-columns: 1fr 1fr;
   }
+
+  &.solo {
+    @media (--bp-sm) {
+      grid-template-columns: 1fr;
+    }
+  }
 }
 
 .card {
