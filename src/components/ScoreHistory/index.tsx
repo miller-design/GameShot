@@ -174,10 +174,13 @@ const ScoreHistory = ({
     >
       <div className={styles.head} role="row">
         <div role="columnheader">Scored</div>
+        {isPractice ? (
+          <div role="columnheader" className={styles.spine} />
+        ) : null}
         <div role="columnheader">To Go</div>
-        <div role="columnheader" className={styles.spine} />
         {!isPractice ? (
           <>
+            <div role="columnheader" className={styles.spine} />
             <div role="columnheader">Scored</div>
             <div role="columnheader">To Go</div>
           </>
@@ -265,6 +268,11 @@ const ScoreHistory = ({
                   ''
                 )}
               </div>
+              {isPractice ? (
+                <div className={clsx(styles.cell, styles.spine)} role="cell">
+                  {showSpine ? row.dartCount : ''}
+                </div>
+              ) : null}
               <div
                 className={clsx(
                   styles.cell,
@@ -279,11 +287,11 @@ const ScoreHistory = ({
                     ? row.p0.remaining
                     : ''}
               </div>
-              <div className={clsx(styles.cell, styles.spine)} role="cell">
-                {showSpine ? row.dartCount : ''}
-              </div>
               {!isPractice ? (
                 <>
+                  <div className={clsx(styles.cell, styles.spine)} role="cell">
+                    {showSpine ? row.dartCount : ''}
+                  </div>
                   <div
                     className={clsx(
                       styles.cell,

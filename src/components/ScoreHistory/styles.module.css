@@ -15,7 +15,13 @@
   &.practice {
     & .head,
     & .row {
-      grid-template-columns: 1fr 1fr 2.5rem;
+      /* Scored | dart spine | To Go — spine sits between the two columns. */
+      grid-template-columns: 1fr 2.5rem 1fr;
+    }
+
+    & .spine {
+      justify-content: center;
+      text-align: center;
     }
   }
 
