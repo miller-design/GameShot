@@ -15,6 +15,9 @@ const VISIBLE_THROW_ROWS = 5
 type ScoreHistoryProps = {
   match: MatchState
   className?: string
+  editingVisitIndex: number | null
+  onEditVisit: (visitIndex: number) => void
+  onCancelEdit?: () => void
 }
 
 /**
@@ -27,13 +30,34 @@ type ScoreHistoryProps = {
  * @example
  * <ScoreHistory match={match} />
  */
-const ScoreHistory = ({ match, className }: ScoreHistoryProps) => {
+const ScoreHistory = ({
+  match,
+  className,
+  editingVisitIndex,
+  onEditVisit,
+  onCancelEdit,
+}: ScoreHistoryProps) => {
   const { currentLeg } = match
   const rows = buildHistoryRows(currentLeg)
   const nextRow = nextInputRowIndex(currentLeg)
   const thrower = currentLeg.currentPlayer
+  const canEdit = match.matchWinner === null
   const canHighlight =
-    match.pendingLegWinner === null && match.matchWinner === null
+    match.pendingLegWinner === null &&
+    match.matchWinner === null &&
+    editingVisitIndex === null
+
+  const p0VisitAbsIndices: number[] = []
+  const p1VisitAbsIndices: number[] = []
+  for (let i = 0; i < currentLeg.visits.length; i++) {
+    const p = currentLeg.visits[i].player
+    if (p === 0) {
+      p0VisitAbsIndices.push(i)
+    } else {
+      p1VisitAbsIndices.push(i)
+    }
+  }
+
   const throwAreaRef = useRef<HTMLDivElement>(null)
   const [throwRowHeight, setThrowRowHeight] = useState<number | null>(null)
 
@@ -104,9 +128,13 @@ const ScoreHistory = ({ match, className }: ScoreHistoryProps) => {
         }
       >
         {displayRows.map((row, index) => {
-          const highlightP0 = canHighlight && thrower === 0 && index === nextRow
-          const highlightP1 = canHighlight && thrower === 1 && index === nextRow
+          const isNextP0 = thrower === 0 && index === nextRow
+          const isNextP1 = thrower === 1 && index === nextRow
+          const highlightP0 = canHighlight && isNextP0
+          const highlightP1 = canHighlight && isNextP1
           const showSpine = row.p0 !== null || row.p1 !== null
+          const p0AbsIndex = row.p0 ? p0VisitAbsIndices[index] ?? null : null
+          const p1AbsIndex = row.p1 ? p1VisitAbsIndices[index] ?? null : null
 
           return (
             <div
@@ -118,11 +146,35 @@ const ScoreHistory = ({ match, className }: ScoreHistoryProps) => {
                 className={clsx(
                   styles.cell,
                   highlightP0 && styles.inputCell,
+                  p0AbsIndex !== null &&
+                    p0AbsIndex === editingVisitIndex &&
+                    styles.editSelected,
                   row.p0?.bust && styles.bust,
                 )}
                 role="cell"
+                onClick={
+                  isNextP0 && editingVisitIndex !== null
+                    ? onCancelEdit
+                    : undefined
+                }
               >
-                {row.p0 ? (row.p0.bust ? `B ${row.p0.scored}` : row.p0.scored) : ''}
+                {row.p0 ? (
+                  <button
+                    type="button"
+                    className={styles.scoredButton}
+                    disabled={!canEdit}
+                    onClick={() => {
+                      if (p0AbsIndex === null) return
+                      onEditVisit(p0AbsIndex)
+                    }}
+                    aria-label={`Edit scored visit${row.p0.bust ? ' (bust)' : ''}: ${row.p0.bust ? `B ${row.p0.scored}` : row.p0.scored}`}
+                    role="presentation"
+                  >
+                    {row.p0.bust ? `B ${row.p0.scored}` : row.p0.scored}
+                  </button>
+                ) : (
+                  ''
+                )}
               </div>
               <div className={clsx(styles.cell, styles.toGo)} role="cell">
                 {row.p0 ? row.p0.remaining : ''}
@@ -134,11 +186,35 @@ const ScoreHistory = ({ match, className }: ScoreHistoryProps) => {
                 className={clsx(
                   styles.cell,
                   highlightP1 && styles.inputCell,
+                  p1AbsIndex !== null &&
+                    p1AbsIndex === editingVisitIndex &&
+                    styles.editSelected,
                   row.p1?.bust && styles.bust,
                 )}
                 role="cell"
+                onClick={
+                  isNextP1 && editingVisitIndex !== null
+                    ? onCancelEdit
+                    : undefined
+                }
               >
-                {row.p1 ? (row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored) : ''}
+                {row.p1 ? (
+                  <button
+                    type="button"
+                    className={styles.scoredButton}
+                    disabled={!canEdit}
+                    onClick={() => {
+                      if (p1AbsIndex === null) return
+                      onEditVisit(p1AbsIndex)
+                    }}
+                    aria-label={`Edit scored visit${row.p1.bust ? ' (bust)' : ''}: ${row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored}`}
+                    role="presentation"
+                  >
+                    {row.p1.bust ? `B ${row.p1.scored}` : row.p1.scored}
+                  </button>
+                ) : (
+                  ''
+                )}
               </div>
               <div className={clsx(styles.cell, styles.toGo)} role="cell">
                 {row.p1 ? row.p1.remaining : ''}

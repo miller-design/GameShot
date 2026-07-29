@@ -17,7 +17,9 @@ import type {
  * legsToWin({ mode: 'first-to', legsTarget: 3, ... }) // 3
  * legsToWin({ mode: 'best-of', legsTarget: 5, ... })  // 3
  */
-export function legsToWin(config: Pick<MatchConfig, 'mode' | 'legsTarget'>): number {
+export function legsToWin(
+  config: Pick<MatchConfig, 'mode' | 'legsTarget'>,
+): number {
   if (config.mode === 'first-to') {
     return config.legsTarget
   }
@@ -34,7 +36,10 @@ export function legsToWin(config: Pick<MatchConfig, 'mode' | 'legsTarget'>): num
  * @example
  * createLeg(501, 0)
  */
-export function createLeg(startingScore: number, firstThrower: PlayerIndex): LegState {
+export function createLeg(
+  startingScore: number,
+  firstThrower: PlayerIndex,
+): LegState {
   return {
     visits: [],
     remaining: [startingScore, startingScore],
@@ -304,6 +309,175 @@ export function undoVisit(state: MatchState): MatchState {
 }
 
 /**
+ * Replays a leg after replacing one visit's scored value (no product guards).
+ *
+ * @param state - Current match state
+ * @param visitIndex - Absolute index into `state.currentLeg.visits` (0-based)
+ * @param scored - New visit total (must be an integer 0–180)
+ * @returns Replayed match state, or the original state when input is invalid
+ *
+ * @example
+ * previewEditVisit(state, 0, 70)
+ */
+export function previewEditVisit(
+  state: MatchState,
+  visitIndex: number,
+  scored: number,
+): MatchState {
+  if (state.matchWinner !== null) {
+    return state
+  }
+  if (!isValidVisitScore(scored)) {
+    return state
+  }
+
+  const leg = state.currentLeg
+  if (visitIndex < 0 || visitIndex >= leg.visits.length) {
+    return state
+  }
+
+  // Keep earlier visits unchanged; replay from the edited visit forward.
+  const keptVisits = leg.visits.slice(0, visitIndex)
+  const replayStartRemaining = rebuildRemaining(
+    state.config.startingScore,
+    keptVisits,
+  )
+
+  const replayRemaining: [number, number] = [...replayStartRemaining]
+  const updatedVisits: Visit[] = [...keptVisits]
+
+  let winner: PlayerIndex | null = null
+  let pendingLegWinner: PlayerIndex | null = null
+  let lastBust = false
+
+  for (let i = visitIndex; i < leg.visits.length; i++) {
+    const original = leg.visits[i]
+    const player = original.player
+    const before = replayRemaining[player]
+    const nextScored = i === visitIndex ? scored : original.scored
+
+    const result = evaluateVisit(before, nextScored)
+
+    updatedVisits.push({
+      player,
+      scored: nextScored,
+      remaining: result.remaining,
+      bust: result.bust,
+      checkout: result.checkout,
+    })
+
+    replayRemaining[player] = result.remaining
+
+    if (result.checkout) {
+      winner = player
+      pendingLegWinner = player
+      lastBust = false
+      break // A checkout ends the leg immediately.
+    }
+
+    lastBust = result.bust
+  }
+
+  const currentPlayer: PlayerIndex = (() => {
+    if (winner !== null) {
+      // On checkout, submitVisit does not advance turn; the thrower stays current.
+      return winner
+    }
+    const last = updatedVisits[updatedVisits.length - 1]
+    return last.player === 0 ? 1 : 0
+  })()
+
+  return {
+    ...state,
+    currentLeg: {
+      ...leg,
+      visits: updatedVisits,
+      remaining: replayRemaining,
+      currentPlayer,
+      winner,
+    },
+    pendingLegWinner,
+    lastBust,
+  }
+}
+
+/**
+ * Whether a previewed edit would finish the leg via a visit other than the one
+ * being edited (winning / checking out by correcting an earlier score).
+ *
+ * @param state - Match state before the edit
+ * @param visitIndex - Visit being edited
+ * @param preview - Result of `previewEditVisit`
+ * @returns True when the edit should be blocked as a leg-winning cascade
+ *
+ * @example
+ * editWouldCheckoutOtherVisit(state, 2, previewEditVisit(state, 2, 101))
+ */
+export function editWouldCheckoutOtherVisit(
+  state: MatchState,
+  visitIndex: number,
+  preview: MatchState,
+): boolean {
+  const checkoutIndex = preview.currentLeg.visits.findIndex((v) => v.checkout)
+  if (checkoutIndex === -1) return false
+  // Allow correcting the finishing visit itself; block cascading checkouts.
+  return checkoutIndex !== visitIndex
+}
+
+/**
+ * Whether a previewed edit would newly make the latest visit a bust.
+ *
+ * @param state - Match state before the edit
+ * @param preview - Result of `previewEditVisit`
+ * @returns True when the last visit becomes a bust and was not already a bust
+ *
+ * @example
+ * editWouldBustLatestVisit(state, previewEditVisit(state, 0, 180))
+ */
+export function editWouldBustLatestVisit(
+  state: MatchState,
+  preview: MatchState,
+): boolean {
+  const beforeLatest = state.currentLeg.visits.at(-1)
+  const afterLatest = preview.currentLeg.visits.at(-1)
+  if (!afterLatest?.bust) return false
+  return !beforeLatest?.bust
+}
+
+/**
+ * Edits a previously recorded visit by index and replays the leg from there.
+ *
+ * Refuses edits that would check out the leg via a different visit than the one
+ * being corrected (players must enter a finish on a normal turn).
+ *
+ * @param state - Current match state
+ * @param visitIndex - Absolute index into `state.currentLeg.visits` (0-based)
+ * @param scored - New visit total (must be an integer 0–180)
+ *
+ * @returns Updated match state. If the edit cannot be applied (invalid input,
+ * match already finished, out-of-range index, or blocked checkout cascade),
+ * returns the original state.
+ *
+ * @example
+ * // Correct the first recorded visit and automatically replay everything after it.
+ * editVisit(state, 0, 70)
+ */
+export function editVisit(
+  state: MatchState,
+  visitIndex: number,
+  scored: number,
+): MatchState {
+  const preview = previewEditVisit(state, visitIndex, scored)
+  if (preview === state) {
+    return state
+  }
+  if (editWouldCheckoutOtherVisit(state, visitIndex, preview)) {
+    return state
+  }
+  return preview
+}
+
+/**
  * Rebuilds both players' remaining scores from the visit list.
  *
  * @param startingScore - Opening score for the leg
@@ -348,7 +522,10 @@ export function dartCountForVisitIndex(visitIndex: number): number {
  * @example
  * computePlayerStats(state, 0)
  */
-export function computePlayerStats(state: MatchState, player: PlayerIndex): PlayerStats {
+export function computePlayerStats(
+  state: MatchState,
+  player: PlayerIndex,
+): PlayerStats {
   const allLegs = [...state.completedLegs]
   if (state.pendingLegWinner === null && state.matchWinner === null) {
     allLegs.push(state.currentLeg)
@@ -428,16 +605,12 @@ export function buildHistoryRows(leg: LegState): HistoryRow[] {
   const rows: HistoryRow[] = []
 
   for (let i = 0; i < rowCount; i++) {
-    const a = p0Visits[i]
-    const b = p1Visits[i]
+    const a = p0Visits[i] as Visit | undefined
+    const b = p1Visits[i] as Visit | undefined
     rows.push({
       dartCount: dartCountForVisitIndex(i),
-      p0: a
-        ? { scored: a.scored, remaining: a.remaining, bust: a.bust }
-        : null,
-      p1: b
-        ? { scored: b.scored, remaining: b.remaining, bust: b.bust }
-        : null,
+      p0: a ? { scored: a.scored, remaining: a.remaining, bust: a.bust } : null,
+      p1: b ? { scored: b.scored, remaining: b.remaining, bust: b.bust } : null,
     })
   }
 

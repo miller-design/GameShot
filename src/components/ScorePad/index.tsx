@@ -27,8 +27,12 @@ const BackspaceIcon = () => {
 
 type ScorePadProps = {
   disabled?: boolean
-  onSubmit: (scored: number) => void
+  onSubmit: (scored: number) => void | boolean
   className?: string
+  mode?: 'entry' | 'edit'
+  prefillScore?: number | null
+  errorMessage?: string | null
+  onBufferChange?: () => void
 }
 
 /**
@@ -41,8 +45,29 @@ type ScorePadProps = {
  * @example
  * <ScorePad onSubmit={(n) => submitVisit(n)} />
  */
-const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
+const ScorePad = ({
+  disabled = false,
+  onSubmit,
+  className,
+  mode = 'entry',
+  prefillScore = null,
+  errorMessage = null,
+  onBufferChange,
+}: ScorePadProps) => {
   const [buffer, setBuffer] = useState('')
+  const [replaceNextDigit, setReplaceNextDigit] = useState(false)
+  const isEdit = mode === 'edit'
+  const prefillStr = prefillScore === null ? '' : String(prefillScore)
+
+  useEffect(() => {
+    if (!isEdit || prefillScore === null) {
+      setBuffer('')
+      setReplaceNextDigit(false)
+      return
+    }
+    setBuffer(prefillStr)
+    setReplaceNextDigit(true)
+  }, [isEdit, prefillScore, prefillStr])
 
   /**
    * Appends a digit to the score buffer (max 3 digits / 180).
@@ -55,15 +80,27 @@ const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
   const appendDigit = useCallback(
     (digit: string) => {
       if (disabled) return
+      onBufferChange?.()
+      const shouldReplace =
+        isEdit && prefillScore !== null && replaceNextDigit
+      setReplaceNextDigit(false)
       setBuffer((prev) => {
-        const next = `${prev}${digit}`
+        const next =
+          shouldReplace && prev === prefillStr ? digit : `${prev}${digit}`
         if (next.length > 3) return prev
         const value = Number(next)
         if (value > 180) return prev
         return next
       })
     },
-    [disabled],
+    [
+      disabled,
+      isEdit,
+      onBufferChange,
+      prefillScore,
+      prefillStr,
+      replaceNextDigit,
+    ],
   )
 
   /**
@@ -74,8 +111,10 @@ const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
    */
   const backspace = useCallback(() => {
     if (disabled) return
+    onBufferChange?.()
+    setReplaceNextDigit(false)
     setBuffer((prev) => prev.slice(0, -1))
-  }, [disabled])
+  }, [disabled, onBufferChange])
 
   /**
    * Clears the entire buffer.
@@ -85,8 +124,10 @@ const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
    */
   const clear = useCallback(() => {
     if (disabled) return
+    onBufferChange?.()
+    setReplaceNextDigit(false)
     setBuffer('')
-  }, [disabled])
+  }, [disabled, onBufferChange])
 
   /**
    * Submits the buffered score if valid.
@@ -99,7 +140,8 @@ const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
     if (buffer === '') return
     const value = Number(buffer)
     if (!isValidVisitScore(value)) return
-    onSubmit(value)
+    const result = onSubmit(value)
+    if (result === false) return
     setBuffer('')
   }, [buffer, disabled, onSubmit])
 
@@ -148,12 +190,23 @@ const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
 
   return (
     <div className={clsx(styles.root, className)} aria-label="Score pad">
-      <div className={styles.display} aria-live="polite">
-        {buffer === '' ? (
-          <span className={styles.placeholder}>Enter score</span>
-        ) : (
-          buffer
-        )}
+      <div className={styles.displayWrap}>
+        <div className={styles.display} aria-live="polite">
+          {buffer === '' ? (
+            <span className={styles.placeholder}>
+              {isEdit ? 'Edit score' : 'Enter score'}
+            </span>
+          ) : (
+            buffer
+          )}
+        </div>
+
+        {isEdit && errorMessage !== null ? (
+          <div className={styles.toast} role="alert" aria-live="assertive">
+            <span className={styles.toastIcon} aria-hidden="true">!</span>
+            <span>{errorMessage}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className={styles.grid}>
@@ -199,10 +252,10 @@ const ScorePad = ({ disabled = false, onSubmit, className }: ScorePadProps) => {
       <button
         type="button"
         className={styles.submit}
-        disabled={disabled || buffer === ''}
+        disabled={disabled || buffer === '' || (isEdit && errorMessage !== null)}
         onClick={submit}
       >
-        Submit
+        {isEdit ? 'Update' : 'Submit'}
       </button>
     </div>
   )

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  editVisit,
   confirmLeg,
   createMatch,
   evaluateVisit,
@@ -241,5 +242,106 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     state = undoVisit(state)
     expect(state.pendingLegWinner).toBe(null)
     expect(state.currentLeg.remaining[0]).toBe(40)
+  })
+})
+
+describe('editVisit', () => {
+  it('replays remaining for later visits when correcting mid-leg score', () => {
+    let state = createMatch(baseConfig)
+    state = submitVisit(state, 60) // p0 -> 441
+    state = submitVisit(state, 60) // p1 -> 441
+    state = submitVisit(state, 30) // p0 -> 411
+    state = submitVisit(state, 10) // p1 -> 431
+
+    expect(state.currentLeg.remaining).toEqual([411, 431])
+    expect(state.currentLeg.currentPlayer).toBe(0)
+
+    state = editVisit(state, 0, 70) // p0 first visit 60 -> 70
+    expect(state.currentLeg.remaining[0]).toBe(401)
+    expect(state.currentLeg.remaining[1]).toBe(431)
+    expect(state.currentLeg.currentPlayer).toBe(0)
+    expect(state.pendingLegWinner).toBe(null)
+    expect(state.currentLeg.winner).toBe(null)
+    expect(state.lastBust).toBe(false)
+
+    expect(state.currentLeg.visits[0].scored).toBe(70)
+    expect(state.currentLeg.visits).toHaveLength(4)
+  })
+
+  it('can flip a later bust into a normal visit when editing earlier score', () => {
+    let state = createMatch(baseConfig)
+    // Build player0 to 40, then bust on the next visit with 41.
+    state = submitVisit(state, 180) // p0 -> 321
+    state = submitVisit(state, 60) // p1 -> 441
+    state = submitVisit(state, 180) // p0 -> 141
+    state = submitVisit(state, 60) // p1 -> 381
+    state = submitVisit(state, 101) // p0 -> 40
+    state = submitVisit(state, 60) // p1 -> 321
+    state = submitVisit(state, 41) // p0 bust (40 - 41)
+
+    expect(state.currentLeg.visits[6].player).toBe(0)
+    expect(state.currentLeg.visits[6].bust).toBe(true)
+    expect(state.lastBust).toBe(true)
+    expect(state.currentLeg.remaining[0]).toBe(40)
+    expect(state.pendingLegWinner).toBe(null)
+
+    // Editing the 101 -> 90 adds +11 to scored, raising remaining before 41: 40 - (-?) => 51
+    // so 41 becomes normal (51 - 41 = 10).
+    state = editVisit(state, 4, 90)
+
+    expect(state.currentLeg.visits[6].bust).toBe(false)
+    expect(state.currentLeg.visits[6].checkout).toBe(false)
+    expect(state.currentLeg.visits[6].remaining).toBe(10)
+    expect(state.currentLeg.remaining[0]).toBe(10)
+    expect(state.lastBust).toBe(false)
+    expect(state.pendingLegWinner).toBe(null)
+    expect(state.currentLeg.winner).toBe(null)
+  })
+
+  it('refuses edits that would check out the leg via a later visit', () => {
+    let state = createMatch(baseConfig)
+    // Player0 is set up so a later visit scores 40, but only becomes a checkout after editing.
+    state = submitVisit(state, 180) // p0 -> 321
+    state = submitVisit(state, 60) // p1 -> 441
+    state = submitVisit(state, 180) // p0 -> 141
+    state = submitVisit(state, 60) // p1 -> 381
+    state = submitVisit(state, 96) // p0 -> 45
+    state = submitVisit(state, 60) // p1 -> 321
+    state = submitVisit(state, 40) // p0 -> 5 (not checkout)
+
+    expect(state.pendingLegWinner).toBe(null)
+    expect(state.currentLeg.winner).toBe(null)
+    expect(state.currentLeg.remaining[0]).toBe(5)
+
+    const before = state
+    state = editVisit(state, 4, 101) // 96 -> 101 would make final 40 a checkout
+
+    expect(state).toBe(before)
+    expect(state.pendingLegWinner).toBe(null)
+    expect(state.currentLeg.remaining[0]).toBe(5)
+  })
+
+  it('refuses edits that would move checkout earlier and truncate later visits', () => {
+    let state = createMatch(baseConfig)
+    // Original: checkout happens on the last visit (index 8).
+    state = submitVisit(state, 180) // p0 -> 321
+    state = submitVisit(state, 60) // p1 -> 441
+    state = submitVisit(state, 180) // p0 -> 141
+    state = submitVisit(state, 60) // p1 -> 381
+    state = submitVisit(state, 97) // p0 -> 44
+    state = submitVisit(state, 60) // p1 -> 321
+    state = submitVisit(state, 40) // p0 -> 4 (not checkout)
+    state = submitVisit(state, 60) // p1 -> 261
+    state = submitVisit(state, 4) // p0 -> 0 checkout, pendingLegWinner set
+
+    expect(state.pendingLegWinner).toBe(0)
+    expect(state.currentLeg.visits).toHaveLength(9)
+
+    const before = state
+    // Editing 97 -> 101 would checkout earlier (index 6) and drop later visits.
+    state = editVisit(state, 4, 101)
+
+    expect(state).toBe(before)
+    expect(state.currentLeg.visits).toHaveLength(9)
   })
 })

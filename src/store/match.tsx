@@ -5,12 +5,13 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from 'react'
+import type { ReactNode } from 'react'
 
 import {
   confirmLeg as confirmLegPure,
   createMatch,
+  editVisit as editVisitPure,
   submitVisit as submitVisitPure,
   undoVisit as undoVisitPure,
 } from '#/lib/darts/scoring'
@@ -23,6 +24,7 @@ type MatchContextValue = {
   hydrated: boolean
   startMatch: (config: MatchConfig) => void
   submitVisit: (scored: number) => void
+  editVisit: (visitIndex: number, scored: number) => void
   undo: () => void
   confirmLeg: () => void
   clearMatch: () => void
@@ -122,6 +124,21 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   }, [])
 
   /**
+   * Edits a previously recorded visit score by index and replays the leg.
+   *
+   * @param visitIndex - Absolute index in `currentLeg.visits` (0-based)
+   * @param scored - New visit total (0–180)
+   */
+  const editVisit = useCallback((visitIndex: number, scored: number) => {
+    setMatch((prev) => {
+      if (!prev) return prev
+      const next = editVisitPure(prev, visitIndex, scored)
+      persistMatch(next)
+      return next
+    })
+  }, [])
+
+  /**
    * Undoes the last visit in the current leg.
    *
    * @example
@@ -183,6 +200,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       hydrated,
       startMatch,
       submitVisit,
+      editVisit,
       undo,
       confirmLeg,
       clearMatch,
@@ -193,6 +211,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       hydrated,
       startMatch,
       submitVisit,
+      editVisit,
       undo,
       confirmLeg,
       clearMatch,
