@@ -496,6 +496,10 @@ export function previewEditVisit(
       // On checkout, submitVisit does not advance turn; the thrower stays current.
       return winner
     }
+    // Practice is solo — never advance to player 1 (same as submitVisit).
+    if (state.config.playMode === 'practice') {
+      return 0
+    }
     const last = updatedVisits[updatedVisits.length - 1]
     return last.player === 0 ? 1 : 0
   })()

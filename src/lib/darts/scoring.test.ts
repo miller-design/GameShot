@@ -458,4 +458,17 @@ describe('practice mode', () => {
     expect(state.currentLeg.remaining[0]).toBe(501)
     expect(state.currentLeg.currentPlayer).toBe(0)
   })
+
+  it('keeps currentPlayer on 0 after editing a visit', () => {
+    let state = createMatch(practiceConfig)
+    state = submitVisit(state, 25)
+    state = submitVisit(state, 25)
+    expect(state.currentLeg.currentPlayer).toBe(0)
+
+    state = editVisit(state, 0, 30)
+    expect(state.currentLeg.currentPlayer).toBe(0)
+    expect(state.currentLeg.remaining[0]).toBe(446)
+    expect(state.currentLeg.visits).toHaveLength(2)
+    expect(state.currentLeg.visits.every((v) => v.player === 0)).toBe(true)
+  })
 })
