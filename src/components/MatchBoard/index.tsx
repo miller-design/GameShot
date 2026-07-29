@@ -39,6 +39,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
   const [statsOpen, setStatsOpen] = useState(false)
   const statsBtnRef = useRef<HTMLButtonElement>(null)
   const [editErrorMessage, setEditErrorMessage] = useState<string | null>(null)
+  const [scoreBuffer, setScoreBuffer] = useState('')
   const [editingVisitIndex, setEditingVisitIndex] = useState<number | null>(
     null,
   )
@@ -56,6 +57,24 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
   const clearEditError = useCallback(() => {
     setEditErrorMessage(null)
   }, [])
+
+  /**
+   * Tracks score-pad input for live preview in the history grid.
+   *
+   * @param buffer - Current score pad digit buffer
+   *
+   * @example
+   * handleBufferChange('60')
+   */
+  const handleBufferChange = useCallback(
+    (buffer: string) => {
+      setScoreBuffer(buffer)
+      if (editingVisitIndex !== null) {
+        clearEditError()
+      }
+    },
+    [clearEditError, editingVisitIndex],
+  )
 
   /**
    * Submits a visit from the score pad.
@@ -93,6 +112,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
       clearEditError()
       editVisit(editingVisitIndex, scored)
       setEditingVisitIndex(null)
+      setScoreBuffer('')
       return true
     },
     [clearEditError, editVisit, editingVisitIndex, match, submitVisit],
@@ -112,12 +132,18 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
    * @example
    * handleEditVisit(2)
    */
-  const handleEditVisit = useCallback((visitIndex: number) => {
-    clearEditError()
-    setEditingVisitIndex((current) =>
-      current === visitIndex ? null : visitIndex,
-    )
-  }, [clearEditError])
+  const handleEditVisit = useCallback(
+    (visitIndex: number) => {
+      clearEditError()
+      if (editingVisitIndex === visitIndex) {
+        setEditingVisitIndex(null)
+        setScoreBuffer('')
+        return
+      }
+      setEditingVisitIndex(visitIndex)
+    },
+    [clearEditError, editingVisitIndex],
+  )
 
   /**
    * Cancels the active edit (e.g. when tapping the next-throw input cell).
@@ -128,6 +154,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
   const handleCancelEdit = useCallback(() => {
     clearEditError()
     setEditingVisitIndex(null)
+    setScoreBuffer('')
   }, [clearEditError])
 
   /**
@@ -162,12 +189,14 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
           match={match}
           bustFlash={match.lastBust}
           onBustFlashEnd={clearBustFlag}
+          inputBuffer={editingVisitIndex === null ? scoreBuffer : ''}
         />
         <ScoreHistory
           match={match}
           editingVisitIndex={editingVisitIndex}
           onEditVisit={handleEditVisit}
           onCancelEdit={handleCancelEdit}
+          inputBuffer={scoreBuffer}
         />
       </section>
 
@@ -177,10 +206,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
             <button
               type="button"
               className={styles.toolBtn}
-              onClick={() => {
-                clearEditError()
-                setEditingVisitIndex(null)
-              }}
+              onClick={handleCancelEdit}
             >
               Cancel
             </button>
@@ -221,9 +247,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
           }
           onSubmit={handleSubmit}
           errorMessage={editingVisitIndex === null ? null : editErrorMessage}
-          onBufferChange={
-            editingVisitIndex === null ? undefined : clearEditError
-          }
+          onBufferChange={handleBufferChange}
         />
       </section>
 

@@ -4,7 +4,9 @@ import type { CSSProperties } from 'react'
 
 import {
   buildHistoryRows,
+  evaluateVisit,
   nextInputRowIndex,
+  previewEditVisit,
 } from '#/lib/darts/scoring'
 import type { MatchState } from '#/types/match'
 
@@ -19,6 +21,57 @@ type ScoreHistoryProps = {
   editingVisitIndex: number | null
   onEditVisit: (visitIndex: number) => void
   onCancelEdit?: () => void
+  inputBuffer?: string
+}
+
+type InputPreview = {
+  scored: string
+  toGo: number
+  bust: boolean
+}
+
+/**
+ * Builds a live preview for the next throw input cell.
+ *
+ * @param remaining - Player's score before this visit
+ * @param buffer - Current score pad digit buffer
+ * @returns Preview scored/to-go values, or null when buffer is empty
+ *
+ * @example
+ * previewEntryInput(441, '60') // { scored: '60', toGo: 381, bust: false }
+ */
+function previewEntryInput(
+  remaining: number,
+  buffer: string,
+): InputPreview | null {
+  if (buffer === '') return null
+  const scored = Number(buffer)
+  const result = evaluateVisit(remaining, scored)
+  return { scored: buffer, toGo: result.remaining, bust: result.bust }
+}
+
+/**
+ * Builds a live preview while editing an existing visit.
+ *
+ * @param match - Full match state
+ * @param visitIndex - Absolute visit index being edited
+ * @param buffer - Current score pad digit buffer
+ * @returns Preview scored/to-go values, or null when buffer is empty
+ *
+ * @example
+ * previewEditInput(match, 2, '45')
+ */
+function previewEditInput(
+  match: MatchState,
+  visitIndex: number,
+  buffer: string,
+): InputPreview | null {
+  if (buffer === '') return null
+  const scored = Number(buffer)
+  const preview = previewEditVisit(match, visitIndex, scored)
+  const visit = preview.currentLeg.visits[visitIndex]
+  if (!visit) return null
+  return { scored: buffer, toGo: visit.remaining, bust: visit.bust }
 }
 
 /**
@@ -37,6 +90,7 @@ const ScoreHistory = ({
   editingVisitIndex,
   onEditVisit,
   onCancelEdit,
+  inputBuffer = '',
 }: ScoreHistoryProps) => {
   const { currentLeg } = match
   const rows = buildHistoryRows(currentLeg)
@@ -61,6 +115,11 @@ const ScoreHistory = ({
 
   const throwAreaRef = useRef<HTMLDivElement>(null)
   const [throwRowHeight, setThrowRowHeight] = useState<number | null>(null)
+  // Prefill during edit must not paint into the next-throw input cell.
+  const entryPreview =
+    editingVisitIndex === null
+      ? previewEntryInput(currentLeg.remaining[thrower], inputBuffer)
+      : null
 
   const displayRows = [...rows]
   while (displayRows.length < VISIBLE_THROW_ROWS) {
@@ -137,6 +196,18 @@ const ScoreHistory = ({
           const showSpine = row.p0 !== null || row.p1 !== null
           const p0AbsIndex = row.p0 ? p0VisitAbsIndices[index] ?? null : null
           const p1AbsIndex = row.p1 ? p1VisitAbsIndices[index] ?? null : null
+          const p0EditPreview =
+            p0AbsIndex !== null && p0AbsIndex === editingVisitIndex
+              ? previewEditInput(match, p0AbsIndex, inputBuffer)
+              : null
+          const p1EditPreview =
+            p1AbsIndex !== null && p1AbsIndex === editingVisitIndex
+              ? previewEditInput(match, p1AbsIndex, inputBuffer)
+              : null
+          const p0InputPreview = isNextP0 ? entryPreview : null
+          const p1InputPreview = isNextP1 ? entryPreview : null
+          const p0ScoredPreview = p0EditPreview ?? p0InputPreview
+          const p1ScoredPreview = p1EditPreview ?? p1InputPreview
 
           return (
             <div
@@ -151,7 +222,8 @@ const ScoreHistory = ({
                   p0AbsIndex !== null &&
                     p0AbsIndex === editingVisitIndex &&
                     styles.editSelected,
-                  row.p0?.bust && styles.bust,
+                  (row.p0?.bust && !p0ScoredPreview) && styles.bust,
+                  p0ScoredPreview?.bust && styles.bust,
                 )}
                 role="cell"
                 onClick={
@@ -160,7 +232,9 @@ const ScoreHistory = ({
                     : undefined
                 }
               >
-                {row.p0 ? (
+                {p0ScoredPreview ? (
+                  <span className={styles.previewScore}>{p0ScoredPreview.scored}</span>
+                ) : row.p0 ? (
                   <button
                     type="button"
                     className={styles.scoredButton}
@@ -178,8 +252,19 @@ const ScoreHistory = ({
                   ''
                 )}
               </div>
-              <div className={clsx(styles.cell, styles.toGo)} role="cell">
-                {row.p0 ? row.p0.remaining : ''}
+              <div
+                className={clsx(
+                  styles.cell,
+                  styles.toGo,
+                  p0ScoredPreview?.bust && styles.bust,
+                )}
+                role="cell"
+              >
+                {p0ScoredPreview
+                  ? p0ScoredPreview.toGo
+                  : row.p0
+                    ? row.p0.remaining
+                    : ''}
               </div>
               <div className={clsx(styles.cell, styles.spine)} role="cell">
                 {showSpine ? row.dartCount : ''}
@@ -191,7 +276,8 @@ const ScoreHistory = ({
                   p1AbsIndex !== null &&
                     p1AbsIndex === editingVisitIndex &&
                     styles.editSelected,
-                  row.p1?.bust && styles.bust,
+                  (row.p1?.bust && !p1ScoredPreview) && styles.bust,
+                  p1ScoredPreview?.bust && styles.bust,
                 )}
                 role="cell"
                 onClick={
@@ -200,7 +286,9 @@ const ScoreHistory = ({
                     : undefined
                 }
               >
-                {row.p1 ? (
+                {p1ScoredPreview ? (
+                  <span className={styles.previewScore}>{p1ScoredPreview.scored}</span>
+                ) : row.p1 ? (
                   <button
                     type="button"
                     className={styles.scoredButton}
@@ -218,8 +306,19 @@ const ScoreHistory = ({
                   ''
                 )}
               </div>
-              <div className={clsx(styles.cell, styles.toGo)} role="cell">
-                {row.p1 ? row.p1.remaining : ''}
+              <div
+                className={clsx(
+                  styles.cell,
+                  styles.toGo,
+                  p1ScoredPreview?.bust && styles.bust,
+                )}
+                role="cell"
+              >
+                {p1ScoredPreview
+                  ? p1ScoredPreview.toGo
+                  : row.p1
+                    ? row.p1.remaining
+                    : ''}
               </div>
             </div>
           )

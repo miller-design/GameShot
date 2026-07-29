@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useEffect } from 'react'
 
+import { evaluateVisit } from '#/lib/darts/scoring'
 import type { MatchState } from '#/types/match'
 
 import styles from './styles.module.css'
@@ -10,6 +11,7 @@ type RemainingScoresProps = {
   bustFlash: boolean
   onBustFlashEnd: () => void
   className?: string
+  inputBuffer?: string
 }
 
 /**
@@ -28,6 +30,7 @@ const RemainingScores = ({
   bustFlash,
   onBustFlashEnd,
   className,
+  inputBuffer = '',
 }: RemainingScoresProps) => {
   const thrower = match.currentLeg.currentPlayer
   const [r0, r1] = match.currentLeg.remaining
@@ -35,6 +38,16 @@ const RemainingScores = ({
     match.pendingLegWinner !== null || match.matchWinner !== null
   const lastVisit = match.currentLeg.visits.at(-1)
   const bustedPlayer = bustFlash && lastVisit?.bust ? lastVisit.player : null
+
+  const previewRemaining =
+    inputBuffer === ''
+      ? null
+      : evaluateVisit(match.currentLeg.remaining[thrower], Number(inputBuffer))
+          .remaining
+  const displayR0 =
+    thrower === 0 && previewRemaining !== null ? previewRemaining : r0
+  const displayR1 =
+    thrower === 1 && previewRemaining !== null ? previewRemaining : r1
 
   useEffect(() => {
     if (!bustFlash) return
@@ -51,7 +64,7 @@ const RemainingScores = ({
           bustedPlayer === 0 && styles.bust,
         )}
       >
-        <span className={styles.score}>{r0}</span>
+        <span className={styles.score}>{displayR0}</span>
       </div>
       <div
         className={clsx(
@@ -60,7 +73,7 @@ const RemainingScores = ({
           bustedPlayer === 1 && styles.bust,
         )}
       >
-        <span className={styles.score}>{r1}</span>
+        <span className={styles.score}>{displayR1}</span>
       </div>
     </div>
   )

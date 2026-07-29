@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { isValidVisitScore } from '#/lib/darts/scoring'
 
@@ -32,7 +32,7 @@ type ScorePadProps = {
   mode?: 'entry' | 'edit'
   prefillScore?: number | null
   errorMessage?: string | null
-  onBufferChange?: () => void
+  onBufferChange?: (buffer: string) => void
 }
 
 /**
@@ -54,20 +54,38 @@ const ScorePad = ({
   errorMessage = null,
   onBufferChange,
 }: ScorePadProps) => {
-  const [buffer, setBuffer] = useState('')
-  const [replaceNextDigit, setReplaceNextDigit] = useState(false)
   const isEdit = mode === 'edit'
   const prefillStr = prefillScore === null ? '' : String(prefillScore)
+  const modeSyncKey = `${mode}:${prefillStr}`
 
-  useEffect(() => {
+  const [buffer, setBuffer] = useState(() =>
+    isEdit && prefillScore !== null ? prefillStr : '',
+  )
+  const [replaceNextDigit, setReplaceNextDigit] = useState(
+    () => isEdit && prefillScore !== null,
+  )
+  const [syncedModeKey, setSyncedModeKey] = useState(modeSyncKey)
+  const onBufferChangeRef = useRef(onBufferChange)
+  onBufferChangeRef.current = onBufferChange
+
+  // Keep buffer in sync with mode/prefill before paint so the display never
+  // flashes the empty "Enter score" / "Edit score" placeholder.
+  if (syncedModeKey !== modeSyncKey) {
+    setSyncedModeKey(modeSyncKey)
     if (!isEdit || prefillScore === null) {
       setBuffer('')
       setReplaceNextDigit(false)
-      return
+    } else {
+      setBuffer(prefillStr)
+      setReplaceNextDigit(true)
     }
-    setBuffer(prefillStr)
-    setReplaceNextDigit(true)
-  }, [isEdit, prefillScore, prefillStr])
+  }
+
+  // Sync only when the buffer value changes — not when the parent callback identity changes,
+  // which would re-push a stale edit prefill into entry preview for one frame.
+  useEffect(() => {
+    onBufferChangeRef.current?.(buffer)
+  }, [buffer])
 
   /**
    * Appends a digit to the score buffer (max 3 digits / 180).
@@ -80,7 +98,6 @@ const ScorePad = ({
   const appendDigit = useCallback(
     (digit: string) => {
       if (disabled) return
-      onBufferChange?.()
       const shouldReplace =
         isEdit && prefillScore !== null && replaceNextDigit
       setReplaceNextDigit(false)
@@ -93,14 +110,7 @@ const ScorePad = ({
         return next
       })
     },
-    [
-      disabled,
-      isEdit,
-      onBufferChange,
-      prefillScore,
-      prefillStr,
-      replaceNextDigit,
-    ],
+    [disabled, isEdit, prefillScore, prefillStr, replaceNextDigit],
   )
 
   /**
@@ -111,10 +121,9 @@ const ScorePad = ({
    */
   const backspace = useCallback(() => {
     if (disabled) return
-    onBufferChange?.()
     setReplaceNextDigit(false)
     setBuffer((prev) => prev.slice(0, -1))
-  }, [disabled, onBufferChange])
+  }, [disabled])
 
   /**
    * Clears the entire buffer.
@@ -124,10 +133,9 @@ const ScorePad = ({
    */
   const clear = useCallback(() => {
     if (disabled) return
-    onBufferChange?.()
     setReplaceNextDigit(false)
     setBuffer('')
-  }, [disabled, onBufferChange])
+  }, [disabled])
 
   /**
    * Submits the buffered score if valid.

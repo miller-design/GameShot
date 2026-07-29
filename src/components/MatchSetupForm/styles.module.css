@@ -1,13 +1,14 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  max-width: 28rem;
-  width: 100%;
+  gap: 2rem;
+  box-sizing: border-box;
+  width: 80%;
   padding: 1.5rem;
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
   background: var(--color-surface);
+  overflow: hidden;
 
   & .eyebrow {
     font-size: var(--fs-xs);
@@ -37,10 +38,11 @@
   & .field {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1.15rem;
+    min-width: 0;
 
     & legend {
-      margin-bottom: 0.25rem;
+      margin-bottom: 1rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       font-size: var(--fs-xs);
@@ -50,6 +52,7 @@
   & .row {
     display: grid;
     gap: 0.75rem;
+    min-width: 0;
 
     @media (--bp-sm) {
       grid-template-columns: 1fr 1fr;
@@ -60,24 +63,35 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    min-width: 0;
+
+    & input {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
   }
 
   & .segment {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    min-width: 0;
   }
 
   & .segmentBtn {
-    flex: 1;
-    min-width: 4.5rem;
-    padding: 0.65rem 0.75rem;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.75rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: 0.375rem;
     background: var(--color-bg);
     color: var(--color-text);
     font-size: var(--fs-sm);
     font-weight: var(--fw-medium);
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: anywhere;
     transition:
       border-color 0.15s ease,
       background 0.15s ease,
