@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 import styles from './styles.module.css'
 
@@ -163,12 +163,27 @@ const SlidePanel = ({
      * // Automatically closes on Escape when onRequestClose is provided.
      */
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onRequestClose()
+      if (event.key !== 'Escape') return
+      blurActiveElement()
+      onRequestClose?.()
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onRequestClose])
+
+  /**
+   * Removes focus from the current element (Close control, trigger, etc.).
+   *
+   * @example
+   * blurActiveElement()
+   */
+  function blurActiveElement() {
+    const active = document.activeElement
+    if (active instanceof HTMLElement && active !== document.body) {
+      active.blur()
+    }
+  }
 
   /**
    * Starts a vertical drag from a touch or pointer down.
@@ -226,9 +241,11 @@ const SlidePanel = ({
       return
     }
 
-    const shouldClose = dragY >= CLOSE_DISTANCE || velocityY.current >= CLOSE_VELOCITY
+    const shouldClose =
+      dragY >= CLOSE_DISTANCE || velocityY.current >= CLOSE_VELOCITY
     if (shouldClose) {
-      onRequestClose()
+      blurActiveElement()
+      onRequestClose?.()
       return
     }
 
@@ -243,7 +260,14 @@ const SlidePanel = ({
     <div
       className={clsx(styles.backdrop, entered && styles.backdropOpen)}
       role="presentation"
-      onClick={shouldCloseOnBackdrop ? onRequestClose : undefined}
+      onClick={
+        shouldCloseOnBackdrop
+          ? () => {
+              blurActiveElement()
+              onRequestClose?.()
+            }
+          : undefined
+      }
       style={typeof zIndex === 'number' ? { zIndex } : undefined}
     >
       <div

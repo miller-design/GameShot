@@ -8,7 +8,10 @@ import {
   isLegalVisitScore,
   nearestLegalVisit,
 } from '#/lib/darts/dartScores'
-import { isValidCheckout } from '#/lib/darts/scoring'
+import {
+  isValidCheckout,
+  minDartsForCheckout,
+} from '#/lib/darts/scoring'
 import type { BotDifficulty } from '#/types/match'
 
 /** Bogey remainings that cannot be checked out in ≤3 darts. */
@@ -33,7 +36,7 @@ const TIER: Record<BotDifficulty, TierProfile> = {
   easy: {
     targetAvg: 45,
     spread: 28,
-    checkoutRate: 0.35,
+    checkoutRate: 0.32,
     bustOnMissRate: 0.35,
     avoidBogey: false,
     trebleBias: 0.1,
@@ -41,7 +44,7 @@ const TIER: Record<BotDifficulty, TierProfile> = {
   medium: {
     targetAvg: 65,
     spread: 32,
-    checkoutRate: 0.55,
+    checkoutRate: 0.5,
     bustOnMissRate: 0.18,
     avoidBogey: true,
     trebleBias: 0.35,
@@ -49,7 +52,7 @@ const TIER: Record<BotDifficulty, TierProfile> = {
   hard: {
     targetAvg: 85,
     spread: 36,
-    checkoutRate: 0.75,
+    checkoutRate: 0.68,
     bustOnMissRate: 0.06,
     avoidBogey: true,
     trebleBias: 0.55,
@@ -165,6 +168,43 @@ function chooseScoringVisit(
 }
 
 /**
+ * Scales tier checkout rate by how hard the finish is in real play.
+ * Base rate applies to simple one-dart doubles; high 3-dart finishes are rare.
+ *
+ * @param remaining - Legal checkout remaining before the visit
+ * @param baseRate - Tier checkout rate for a straightforward double finish
+ * @returns Effective probability of hitting the checkout this visit
+ *
+ * @example
+ * effectiveCheckoutRate(40, 0.68)   // ~0.68 — D20
+ * effectiveCheckoutRate(154, 0.68)  // ~0.04 — T20 T18 D20
+ */
+function effectiveCheckoutRate(remaining: number, baseRate: number): number {
+  const minDarts = minDartsForCheckout(remaining)
+
+  if (minDarts === 1) {
+    // Bull is slightly harder than a standard double.
+    const multiplier = remaining === 50 ? 0.82 : 1
+    return baseRate * multiplier
+  }
+
+  if (minDarts === 2) {
+    let multiplier = 0.38
+    if (remaining <= 60) multiplier = 0.52
+    else if (remaining <= 80) multiplier = 0.44
+    return baseRate * multiplier
+  }
+
+  // Three-dart finishes — steep drop-off for big numbers.
+  let multiplier = 0.2
+  if (remaining >= 150) multiplier = 0.06
+  else if (remaining >= 130) multiplier = 0.1
+  else if (remaining >= 110) multiplier = 0.15
+
+  return baseRate * multiplier
+}
+
+/**
  * Handles a finishable remaining: checkout attempt or deliberate miss leave.
  *
  * @param remaining - Legal checkout remaining
@@ -181,8 +221,9 @@ function chooseCheckoutVisit(
   rng: () => number,
 ): number {
   const profile = TIER[difficulty]
+  const checkoutChance = effectiveCheckoutRate(remaining, profile.checkoutRate)
 
-  if (rng() < profile.checkoutRate) {
+  if (rng() < checkoutChance) {
     return remaining
   }
 
@@ -208,7 +249,7 @@ function chooseCheckoutVisit(
   const maxSafe = Math.max(0, remaining - 2)
   if (maxSafe === 0) {
     // Only doubles left — chance to hit or bust with a legal visit.
-    if (rng() < profile.checkoutRate) return remaining
+    if (rng() < checkoutChance) return remaining
     const bust = remaining + 1
     return isLegalVisitScore(bust) ? bust : nearestLegalVisit(bust, 180)
   }
@@ -240,10 +281,6 @@ export function chooseBotVisit(
   }
 
   if (isValidCheckout(remaining)) {
-    // High finishes are rarer attempts for easy bots.
-    if (remaining >= 100 && difficulty === 'easy' && rng() > 0.25) {
-      return chooseScoringVisit(remaining, difficulty, rng)
-    }
     return chooseCheckoutVisit(remaining, difficulty, rng)
   }
 

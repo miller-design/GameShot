@@ -50,9 +50,34 @@ describe('chooseBotVisit', () => {
   })
 
   it('checks out when RNG forces a takeout', () => {
-    // checkoutRate path: first rng < rate for hard (0.75)
+    // checkoutRate path: first rng < rate for hard (~0.68) at D20
     const scored = chooseBotVisit(40, 'hard', sequenceRng([0.1]))
     expect(scored).toBe(40)
+  })
+
+  it('rarely checks out high 3-dart finishes even on hard', () => {
+    let hardHits = 0
+    const trials = 500
+    for (let i = 0; i < trials; i++) {
+      if (chooseBotVisit(154, 'hard') === 154) hardHits += 1
+    }
+    // Hard tier ~4% on 154 — should be well below easy doubles rate.
+    expect(hardHits / trials).toBeLessThan(0.12)
+  })
+
+  it('checks out high finishes less often than doubles at every tier', () => {
+    const difficulties: BotDifficulty[] = ['easy', 'medium', 'hard']
+    const trials = 400
+
+    for (const difficulty of difficulties) {
+      let doubleHits = 0
+      let highHits = 0
+      for (let i = 0; i < trials; i++) {
+        if (chooseBotVisit(32, difficulty) === 32) doubleHits += 1
+        if (chooseBotVisit(154, difficulty) === 154) highHits += 1
+      }
+      expect(doubleHits).toBeGreaterThan(highHits)
+    }
   })
 
   it('produces higher mean visits on hard than easy over many trials', () => {
