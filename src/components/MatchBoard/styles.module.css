@@ -6,14 +6,14 @@
   overflow: hidden;
   background: var(--color-bg);
 
-  .body {
+  & .body {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
   }
 
-  .toolbar {
+  & .toolbar {
     display: flex;
     gap: 0.35rem;
     padding: 0.4rem 0.75rem;
@@ -21,7 +21,7 @@
     border-top: 1px solid var(--color-border);
   }
 
-  .toolBtn {
+  & .toolBtn {
     flex: 1;
     min-height: 2.25rem;
     border: 1px solid var(--color-border);
@@ -36,7 +36,7 @@
     }
   }
 
-  .toolBtnActive {
+  & .toolBtnActive {
     border-color: var(--color-accent);
     background: var(--color-accent-tint);
     color: var(--color-text);

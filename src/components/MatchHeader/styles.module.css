@@ -7,7 +7,7 @@
   background: var(--color-header);
   border-bottom: 1px solid var(--color-border);
 
-  .name {
+  & .name {
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -16,31 +16,31 @@
     color: var(--color-text-muted);
     min-width: 0;
 
-    span:last-child {
+    & span:last-child {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
   }
 
-  .left {
+  & .left {
     justify-content: flex-start;
   }
 
-  .right {
+  & .right {
     justify-content: flex-end;
   }
 
-  .active {
+  & .active {
     color: var(--color-text);
   }
 
-  .marker {
+  & .marker {
     color: var(--color-accent);
     font-weight: var(--fw-bold);
   }
 
-  .legs {
+  & .legs {
     font-family: var(--font-mono);
     font-size: var(--fs-lg);
     font-weight: 800;

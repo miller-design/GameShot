@@ -6,7 +6,7 @@
   padding: 0.65rem 0.75rem;
   background: var(--color-header);
 
-  .panel {
+  & .panel {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -30,18 +30,18 @@
     }
   }
 
-  .active {
+  & .active {
     background: var(--color-accent-tint);
     border-color: var(--color-accent);
     box-shadow: 0 0 0 2px var(--color-focus-ring);
     color: var(--color-text);
   }
 
-  .bust {
+  & .bust {
     animation: bustFlash 0.45s ease;
   }
 
-  .score {
+  & .score {
     font-family: var(--font-mono);
     font-size: clamp(3.25rem, 18vw, 7rem);
     font-weight: 800;

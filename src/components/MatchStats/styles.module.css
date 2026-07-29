@@ -113,18 +113,18 @@
   flex-direction: column;
   gap: 0.55rem;
 
-  > div {
+  & > div {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
   }
 
-  dt {
+  & dt {
     color: var(--color-text-muted);
     font-size: var(--fs-sm);
   }
 
-  dd {
+  & dd {
     margin: 0;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;

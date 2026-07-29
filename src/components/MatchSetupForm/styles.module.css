@@ -9,7 +9,7 @@
   border-radius: 0.75rem;
   background: var(--color-surface);
 
-  .eyebrow {
+  & .eyebrow {
     font-size: var(--fs-xs);
     font-weight: var(--fw-semibold);
     letter-spacing: 0.12em;
@@ -17,7 +17,7 @@
     color: var(--color-accent);
   }
 
-  .title {
+  & .title {
     margin: 0;
     font-family: var(--font-mono);
     font-size: clamp(2rem, 6vw, 2.75rem);
@@ -27,19 +27,19 @@
     text-transform: uppercase;
   }
 
-  .lede {
+  & .lede {
     margin: 0;
     color: var(--color-text-muted);
     font-size: var(--fs-sm);
     line-height: var(--lh-relaxed);
   }
 
-  .field {
+  & .field {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 
-    legend {
+    & legend {
       margin-bottom: 0.25rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -47,7 +47,7 @@
     }
   }
 
-  .row {
+  & .row {
     display: grid;
     gap: 0.75rem;
 
@@ -56,19 +56,19 @@
     }
   }
 
-  .label {
+  & .label {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
   }
 
-  .segment {
+  & .segment {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
-  .segmentBtn {
+  & .segmentBtn {
     flex: 1;
     min-width: 4.5rem;
     padding: 0.65rem 0.75rem;
@@ -88,13 +88,13 @@
     }
   }
 
-  .segmentActive {
+  & .segmentActive {
     border-color: var(--color-accent);
     background: var(--color-accent);
     color: var(--color-accent-ink);
   }
 
-  .submit {
+  & .submit {
     margin-top: 0.5rem;
     padding: 0.85rem 1rem;
     border: none;
