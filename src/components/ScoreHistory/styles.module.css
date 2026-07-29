@@ -1,15 +1,10 @@
 .root {
-  flex: 1;
-  min-height: 8.5rem;
-  overflow: auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
-
-  & .grid {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
 
   & .head,
   & .row {
@@ -18,9 +13,6 @@
   }
 
   & .head {
-    position: sticky;
-    top: 0;
-    z-index: 1;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     font-family: var(--font-ui);
@@ -37,7 +29,17 @@
   }
 
   & .row {
+    flex-shrink: 0;
     border-bottom: 1px solid var(--color-border);
+  }
+
+  & .throwArea {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  & .throwRow {
+    height: var(--throw-row-height, 2.25rem);
   }
 
   & .alt {
@@ -48,7 +50,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 2.25rem;
+    height: 100%;
     padding: 0.3rem 0.25rem;
     font-family: var(--font-mono);
     font-size: var(--fs-sm);

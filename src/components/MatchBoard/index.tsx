@@ -73,41 +73,42 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
 
   return (
     <div className={styles.root}>
-      <MatchHeader match={match} />
-
-      <div className={styles.body}>
-        <ScoreHistory match={match} />
+      <section className={styles.scoresZone} aria-label="Scores">
+        <MatchHeader match={match} />
         <RemainingScores
           match={match}
           bustFlash={match.lastBust}
           onBustFlashEnd={clearBustFlag}
         />
-      </div>
+        <ScoreHistory match={match} />
+      </section>
 
-      <nav className={styles.toolbar} aria-label="Match actions">
-        <button
-          type="button"
-          className={styles.toolBtn}
-          onClick={undo}
-          disabled={match.currentLeg.visits.length === 0 || match.matchWinner !== null}
-        >
-          Undo
-        </button>
-        <button
-          ref={statsBtnRef}
-          type="button"
-          className={clsx(styles.toolBtn, statsOpen && styles.toolBtnActive)}
-          aria-pressed={statsOpen}
-          onClick={() => setStatsOpen(true)}
-        >
-          Stats
-        </button>
-        <button type="button" className={styles.toolBtn} onClick={handleExit}>
-          Exit
-        </button>
-      </nav>
+      <section className={styles.uiZone} aria-label="Scoring controls">
+        <nav className={styles.toolbar} aria-label="Match actions">
+          <button
+            type="button"
+            className={styles.toolBtn}
+            onClick={undo}
+            disabled={match.currentLeg.visits.length === 0 || match.matchWinner !== null}
+          >
+            Undo
+          </button>
+          <button
+            ref={statsBtnRef}
+            type="button"
+            className={clsx(styles.toolBtn, statsOpen && styles.toolBtnActive)}
+            aria-pressed={statsOpen}
+            onClick={() => setStatsOpen(true)}
+          >
+            Stats
+          </button>
+          <button type="button" className={styles.toolBtn} onClick={handleExit}>
+            Exit
+          </button>
+        </nav>
 
-      <ScorePad disabled={inputLocked} onSubmit={handleSubmit} />
+        <ScorePad disabled={inputLocked} onSubmit={handleSubmit} />
+      </section>
 
       <MatchStats match={match} open={statsOpen} onClose={handleCloseStats} />
       <MatchResult match={match} />

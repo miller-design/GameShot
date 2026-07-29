@@ -1,10 +1,10 @@
 .root {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem 0.75rem;
-  background: var(--color-header);
-  border-top: 1px solid var(--color-border);
 
   & .display {
     display: flex;
@@ -31,12 +31,14 @@
 
   & .grid {
     display: grid;
+    min-height: 0;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, minmax(0, 1fr));
     gap: 0.4rem;
   }
 
   & .key {
-    min-height: 2.65rem;
+    min-height: 0;
     border: 1px solid var(--color-border);
     border-radius: 0.375rem;
     background: var(--color-surface-raised);
@@ -51,10 +53,6 @@
       background: var(--color-accent);
       border-color: var(--color-accent);
       color: var(--color-accent-ink);
-    }
-
-    @media (--bp-sm) {
-      min-height: 3rem;
     }
   }
 

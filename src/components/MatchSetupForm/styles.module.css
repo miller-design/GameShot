@@ -102,7 +102,7 @@
     background: var(--color-accent);
     color: var(--color-accent-ink);
     font-size: var(--fs-md);
-    font-weight: var(--fw-bold);
+    font-weight: var(--fw-medium);
     transition: filter 0.15s ease;
 
     &:hover {
