@@ -28,7 +28,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
   const [player2, setPlayer2] = useState('Player 2')
   const [startingScore, setStartingScore] = useState<StartingScore>(501)
   const [mode, setMode] = useState<MatchMode>('best-of')
-  const [legsTarget, setLegsTarget] = useState(5)
+  const [legsTarget, setLegsTarget] = useState<number | ''>(5)
   const [firstThrower, setFirstThrower] = useState<PlayerIndex>(0)
 
   /**
@@ -43,7 +43,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
     event.preventDefault()
     const name1 = player1.trim() || 'Player 1'
     const name2 = player2.trim() || 'Player 2'
-    const legs = Math.max(1, Math.min(21, Math.floor(legsTarget)))
+    const legs = Math.max(1, Math.min(21, Math.floor(Number(legsTarget) || 1)))
 
     const config: MatchConfig = {
       playerNames: [name1, name2],
@@ -130,7 +130,15 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
             min={1}
             max={21}
             value={legsTarget}
-            onChange={(e) => setLegsTarget(Number(e.target.value))}
+            onChange={(e) => {
+              const raw = e.target.value
+              if (raw === '') {
+                setLegsTarget('')
+                return
+              }
+              const parsed = Number(raw)
+              if (!Number.isNaN(parsed)) setLegsTarget(parsed)
+            }}
           />
         </label>
       </fieldset>
