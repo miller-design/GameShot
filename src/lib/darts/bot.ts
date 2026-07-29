@@ -148,8 +148,8 @@ function chooseScoringVisit(
     }
   }
 
-  let scored = nearestLegalVisit(target, maxSafe)
-  let leave = remaining - scored
+  const scored = nearestLegalVisit(target, maxSafe)
+  const leave = remaining - scored
 
   if (profile.avoidBogey && BOGEYS.has(leave)) {
     const setup = chooseSetupVisit(remaining, true, BOGEYS, rng)
@@ -188,8 +188,11 @@ function chooseCheckoutVisit(
 
   // Missed checkout — bust sometimes on low doubles.
   if (remaining <= 50 && rng() < profile.bustOnMissRate) {
-    const overshoot = remaining + 1 + Math.floor(rng() * 8)
-    return Math.min(180, overshoot)
+    const overshoot = Math.min(180, remaining + 1 + Math.floor(rng() * 8))
+    // Bust totals must still be legal 3-dart combinations.
+    return isLegalVisitScore(overshoot)
+      ? overshoot
+      : nearestLegalVisit(overshoot, 180)
   }
 
   // Leave a decent double / setup.
@@ -204,8 +207,10 @@ function chooseCheckoutVisit(
 
   const maxSafe = Math.max(0, remaining - 2)
   if (maxSafe === 0) {
-    // Only doubles left — chance to hit or bust.
-    return rng() < profile.checkoutRate ? remaining : remaining + 1
+    // Only doubles left — chance to hit or bust with a legal visit.
+    if (rng() < profile.checkoutRate) return remaining
+    const bust = remaining + 1
+    return isLegalVisitScore(bust) ? bust : nearestLegalVisit(bust, 180)
   }
   return nearestLegalVisit(Math.min(profile.targetAvg, maxSafe), maxSafe)
 }

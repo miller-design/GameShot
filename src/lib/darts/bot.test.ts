@@ -34,7 +34,8 @@ describe('chooseBotVisit', () => {
           const scored = chooseBotVisit(remaining, difficulty)
           const result = evaluateVisit(remaining, scored)
           if (result.bust && scored !== remaining) {
-            // Bust overshoot may be any integer the pad would accept.
+            // Bust overshoots must still be legal 3-dart combinations.
+            expect(isLegalVisitScore(scored)).toBe(true)
             expect(scored).toBeGreaterThanOrEqual(0)
             expect(scored).toBeLessThanOrEqual(180)
           } else if (result.checkout) {

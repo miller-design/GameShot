@@ -21,7 +21,7 @@ describe('LEGAL_VISIT_SCORES', () => {
 
   it('is sorted ascending', () => {
     for (let i = 1; i < LEGAL_VISIT_SCORES.length; i++) {
-      expect(LEGAL_VISIT_SCORES[i]!).toBeGreaterThan(LEGAL_VISIT_SCORES[i - 1]!)
+      expect(LEGAL_VISIT_SCORES[i]).toBeGreaterThan(LEGAL_VISIT_SCORES[i - 1])
     }
   })
 })

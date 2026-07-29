@@ -107,6 +107,8 @@ const ScorePad = ({
         if (next.length > 3) return prev
         const value = Number(next)
         if (value > 180) return prev
+        // Reject completed impossible totals (e.g. 179) while allowing prefixes.
+        if (next.length === 3 && !isValidVisitScore(value)) return prev
         return next
       })
     },

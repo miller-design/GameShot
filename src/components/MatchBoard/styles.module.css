@@ -39,8 +39,17 @@
     font-size: var(--fs-sm);
     font-weight: var(--fw-semibold);
 
-    &:hover:not(:disabled) {
+    /* Avoid sticky :hover after tap-open + Escape/swipe close on touch. */
+    @media (hover: hover) {
+      &:hover:not(:disabled) {
+        border-color: var(--color-accent);
+      }
+    }
+
+    &:focus-visible {
+      outline: none;
       border-color: var(--color-accent);
+      box-shadow: 0 0 0 2px var(--color-focus-ring);
     }
   }
 

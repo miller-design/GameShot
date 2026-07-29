@@ -1,3 +1,4 @@
+import { isLegalVisitScore } from '#/lib/darts/dartScores'
 import type {
   LegState,
   MatchConfig,
@@ -79,17 +80,24 @@ export function createMatch(config: MatchConfig): MatchState {
 }
 
 /**
- * Whether a visit score is in the valid entry range (0–180).
+ * Whether a visit score is a valid human/bot entry: integer 0–180 that can
+ * be thrown with ≤3 darts on a standard board.
  *
  * @param scored - Proposed visit total
- * @returns True if score is an integer between 0 and 180 inclusive
+ * @returns True if score is an achievable 0–180 visit
  *
  * @example
  * isValidVisitScore(180) // true
  * isValidVisitScore(181) // false
+ * isValidVisitScore(179) // false — impossible with three darts
  */
 export function isValidVisitScore(scored: number): boolean {
-  return Number.isInteger(scored) && scored >= 0 && scored <= 180
+  return (
+    Number.isInteger(scored) &&
+    scored >= 0 &&
+    scored <= 180 &&
+    isLegalVisitScore(scored)
+  )
 }
 
 /**
@@ -567,15 +575,16 @@ export function editWouldBustLatestVisit(
  * Edits a previously recorded visit by index and replays the leg from there.
  *
  * Refuses edits that would check out the leg via a different visit than the one
- * being corrected (players must enter a finish on a normal turn).
+ * being corrected (players must enter a finish on a normal turn), or that would
+ * newly make the latest visit a bust.
  *
  * @param state - Current match state
  * @param visitIndex - Absolute index into `state.currentLeg.visits` (0-based)
- * @param scored - New visit total (must be an integer 0–180)
+ * @param scored - New visit total (must be a legal 0–180 visit)
  *
  * @returns Updated match state. If the edit cannot be applied (invalid input,
- * match already finished, out-of-range index, or blocked checkout cascade),
- * returns the original state.
+ * match already finished, out-of-range index, blocked checkout cascade, or
+ * bust cascade on the latest visit), returns the original state.
  *
  * @example
  * // Correct the first recorded visit and automatically replay everything after it.
@@ -591,6 +600,9 @@ export function editVisit(
     return state
   }
   if (editWouldCheckoutOtherVisit(state, visitIndex, preview)) {
+    return state
+  }
+  if (editWouldBustLatestVisit(state, preview)) {
     return state
   }
   return preview

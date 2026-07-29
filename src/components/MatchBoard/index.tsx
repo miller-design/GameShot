@@ -72,7 +72,8 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
   const inputLocked =
     match.matchWinner !== null ||
     (match.pendingLegWinner !== null && editingVisitIndex === null) ||
-    isBotTurn
+    isBotTurn ||
+    statsOpen
 
   /**
    * Clears any active edit-rejection toast.
@@ -225,13 +226,24 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
 
   /**
    * Closes the stats sheet and clears the Stats button pressed/focus state.
+   * Used by Close, Escape, backdrop click, and swipe-to-dismiss.
    *
    * @example
    * handleCloseStats()
    */
   function handleCloseStats() {
     setStatsOpen(false)
-    statsBtnRef.current?.blur()
+    // Blur immediately and again after the sheet unmounts — browsers often
+    // restore focus to the Stats trigger when the Close control is removed.
+    const clearFocus = () => {
+      statsBtnRef.current?.blur()
+      const active = document.activeElement
+      if (active instanceof HTMLElement && active !== document.body) {
+        active.blur()
+      }
+    }
+    clearFocus()
+    window.requestAnimationFrame(clearFocus)
   }
 
   return (

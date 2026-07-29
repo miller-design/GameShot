@@ -36,7 +36,7 @@ describe('legsToWin', () => {
 })
 
 describe('isValidVisitScore', () => {
-  it('accepts 0–180 integers', () => {
+  it('accepts legal 0–180 visit totals', () => {
     expect(isValidVisitScore(0)).toBe(true)
     expect(isValidVisitScore(180)).toBe(true)
     expect(isValidVisitScore(100)).toBe(true)
@@ -46,6 +46,12 @@ describe('isValidVisitScore', () => {
     expect(isValidVisitScore(-1)).toBe(false)
     expect(isValidVisitScore(181)).toBe(false)
     expect(isValidVisitScore(60.5)).toBe(false)
+  })
+
+  it('rejects impossible three-dart totals', () => {
+    expect(isValidVisitScore(179)).toBe(false)
+    expect(isValidVisitScore(178)).toBe(false)
+    expect(isValidVisitScore(169)).toBe(false)
   })
 })
 
@@ -118,6 +124,15 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     expect(state.currentLeg.remaining[0]).toBe(441)
     expect(state.currentLeg.currentPlayer).toBe(1)
     expect(state.lastBust).toBe(false)
+  })
+
+  it('ignores impossible three-dart visit totals', () => {
+    let state = createMatch(baseConfig)
+    const before = state
+    state = submitVisit(state, 179)
+    expect(state).toBe(before)
+    expect(state.currentLeg.visits).toHaveLength(0)
+    expect(state.currentLeg.remaining[0]).toBe(501)
   })
 
   it('keeps remaining on bust and advances turn', () => {
@@ -418,6 +433,37 @@ describe('editVisit', () => {
 
     expect(state).toBe(before)
     expect(state.currentLeg.visits).toHaveLength(9)
+  })
+
+  it('refuses edits that would newly bust the latest visit', () => {
+    let state = createMatch(baseConfig)
+    state = submitVisit(state, 180) // p0 -> 321
+    state = submitVisit(state, 60) // p1 -> 441
+    state = submitVisit(state, 180) // p0 -> 141
+    state = submitVisit(state, 60) // p1 -> 381
+    state = submitVisit(state, 90) // p0 -> 51
+    state = submitVisit(state, 60) // p1 -> 321
+    state = submitVisit(state, 41) // p0 -> 10 (legal)
+
+    expect(state.currentLeg.visits[6].bust).toBe(false)
+    expect(state.currentLeg.remaining[0]).toBe(10)
+
+    const before = state
+    // Raising 90 → 101 leaves 40 before the latest visit, so 41 becomes a bust.
+    state = editVisit(state, 4, 101)
+
+    expect(state).toBe(before)
+    expect(state.currentLeg.remaining[0]).toBe(10)
+    expect(state.currentLeg.visits[6].bust).toBe(false)
+  })
+
+  it('ignores impossible three-dart totals when editing', () => {
+    let state = createMatch(baseConfig)
+    state = submitVisit(state, 60)
+    const before = state
+    state = editVisit(state, 0, 179)
+    expect(state).toBe(before)
+    expect(state.currentLeg.visits[0].scored).toBe(60)
   })
 })
 
