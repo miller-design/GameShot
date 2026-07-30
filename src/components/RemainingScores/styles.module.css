@@ -4,19 +4,21 @@
   gap: 0.5rem;
   height: 100%;
   min-height: 0;
-  padding: 0.85rem 0.75rem 1rem;
+  padding: 0.65rem 0.75rem 0.75rem;
   background: var(--color-header);
-  border-bottom: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
 
   &.practice {
     grid-template-columns: 1fr;
   }
 
   & .panel {
+    container-type: size;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%;
+    min-height: 0;
     padding-block: 0.35rem;
     border-radius: 0.5rem;
     border: 2px solid transparent;
@@ -41,7 +43,8 @@
 
   & .score {
     font-family: var(--font-mono);
-    font-size: clamp(var(--fs-2xl), 10vh, 5.5rem);
+    /* Size against the panel, not the full viewport, so 501 fits the remaining row. */
+    font-size: clamp(var(--fs-2xl), 40cqh, 5.5rem);
     font-weight: var(--fw-extrabold);
     font-variant-numeric: tabular-nums;
     line-height: var(--lh-tightest);

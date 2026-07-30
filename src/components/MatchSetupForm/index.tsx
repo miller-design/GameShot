@@ -137,7 +137,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
           {playMode === 'practice' ? 'Player' : 'Players'}
         </legend>
         <div className={styles.row}>
-          <label className={styles.label}>
+          <label className={clsx(styles.label, styles.playerLabel)}>
             {playMode === 'vs-computer' || playMode === 'practice'
               ? 'You'
               : 'Player 1'}
@@ -150,7 +150,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
             />
           </label>
           {playMode === 'matchplay' ? (
-            <label className={styles.label}>
+            <label className={clsx(styles.label, styles.playerLabel)}>
               Player 2
               <input
                 type="text"

@@ -7,6 +7,10 @@
 @import './styles/util/_container.css';
 @import './styles/util/_forms.css';
 
+html {
+  height: 100%;
+}
+
 html,
 body,
 #app {
@@ -21,6 +25,7 @@ body {
   font-size: var(--fs-base);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  /* Match 100dvh boards — 100vh is the large viewport and leaves a gap on mobile Safari. */
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }

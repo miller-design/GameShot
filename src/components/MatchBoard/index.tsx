@@ -250,18 +250,18 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
     <div className={styles.root}>
       <section className={styles.scoresZone} aria-label="Scores">
         <MatchHeader match={match} />
-        <RemainingScores
-          match={match}
-          bustFlash={match.lastBust}
-          onBustFlashEnd={clearBustFlag}
-          inputBuffer={editingVisitIndex === null ? scoreBuffer : ''}
-        />
         <ScoreHistory
           match={match}
           editingVisitIndex={editingVisitIndex}
           onEditVisit={handleEditVisit}
           onCancelEdit={handleCancelEdit}
           inputBuffer={scoreBuffer}
+        />
+        <RemainingScores
+          match={match}
+          bustFlash={match.lastBust}
+          onBustFlashEnd={clearBustFlag}
+          inputBuffer={editingVisitIndex === null ? scoreBuffer : ''}
         />
       </section>
 
