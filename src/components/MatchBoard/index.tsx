@@ -116,6 +116,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
     (scored: number) => {
       if (editingVisitIndex === null) {
         clearEditError()
+        setScoreBuffer('')
         submitVisit(scored)
         return true
       }
