@@ -276,7 +276,7 @@ export function submitVisit(state: MatchState, scored: number): MatchState {
 
 /**
  * Confirms a completed leg: awards the win, starts the next leg
- * (loser throws first), or marks match winner.
+ * with the previous leg starter alternated, or marks match winner.
  *
  * @param state - Match with pendingLegWinner set
  * @returns Updated MatchState
@@ -340,14 +340,14 @@ export function confirmLeg(state: MatchState): MatchState {
     }
   }
 
-  // Loser of the leg throws first in the next leg (standard).
-  const loser: PlayerIndex = winner === 0 ? 1 : 0
+  const nextFirstThrower: PlayerIndex =
+    state.currentLeg.firstThrower === 0 ? 1 : 0
 
   return {
     ...state,
     legsWon,
     completedLegs: [...state.completedLegs, finishedLeg],
-    currentLeg: createLeg(state.config.startingScore, loser),
+    currentLeg: createLeg(state.config.startingScore, nextFirstThrower),
     pendingLegWinner: null,
     pendingLegCheckoutDartsUsed: null,
     lastBust: false,

@@ -166,7 +166,7 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     expect(state.currentLeg.remaining[0]).toBe(0)
   })
 
-  it('awards leg and starts next with loser throwing first', () => {
+  it('awards leg and alternates the next first thrower', () => {
     let state = createMatch(baseConfig)
     state = {
       ...state,
@@ -183,6 +183,30 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     expect(state.currentLeg.firstThrower).toBe(1)
     expect(state.currentLeg.currentPlayer).toBe(1)
     expect(state.matchWinner).toBe(null)
+  })
+
+  it('starts the computer on leg 2 when the human started and lost leg 1', () => {
+    let state = createMatch({
+      ...baseConfig,
+      playMode: 'vs-computer',
+      playerNames: ['You', 'Computer'],
+      botDifficulty: 'medium',
+    })
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [501, 40],
+        currentPlayer: 1,
+      },
+    }
+
+    state = submitVisit(state, 40)
+    state = confirmLeg(state)
+
+    expect(state.legsWon).toEqual([0, 1])
+    expect(state.currentLeg.firstThrower).toBe(1)
+    expect(state.currentLeg.currentPlayer).toBe(1)
   })
 
   it('marks match winner when first-to reached', () => {
