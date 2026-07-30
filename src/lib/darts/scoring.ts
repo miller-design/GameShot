@@ -104,7 +104,7 @@ export function isValidVisitScore(scored: number): boolean {
  * Double-out checkout totals that cannot be finished in three darts or fewer.
  * (Standard “bogey” numbers — finishing on a double is impossible.)
  */
-const IMPOSSIBLE_CHECKOUTS = new Set([159, 162, 163, 165, 166, 168, 169])
+export const IMPOSSIBLE_CHECKOUTS = new Set([159, 162, 163, 165, 166, 168, 169])
 
 /**
  * Whether a remaining score can be checked out under double-out rules

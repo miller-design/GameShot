@@ -9,13 +9,11 @@ import {
   nearestLegalVisit,
 } from '#/lib/darts/dartScores'
 import {
+  IMPOSSIBLE_CHECKOUTS as BOGEYS,
   isValidCheckout,
   minDartsForCheckout,
 } from '#/lib/darts/scoring'
 import type { BotDifficulty } from '#/types/match'
-
-/** Bogey remainings that cannot be checked out in ≤3 darts. */
-const BOGEYS = new Set([159, 162, 163, 165, 166, 168, 169])
 
 type TierProfile = {
   /** Target three-dart average for scoring visits. */
