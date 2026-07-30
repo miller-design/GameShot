@@ -95,18 +95,6 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
 
   return (
     <form className={clsx(styles.root, className)} onSubmit={handleSubmit}>
-      <div className={styles.eyebrow}>New match</div>
-      <div>
-        <h1 className={styles.title}>GameShot</h1>
-        <p className={styles.lede}>
-          {playMode === 'practice'
-            ? 'Solo practice — endless legs, no opponent.'
-            : playMode === 'vs-computer'
-              ? 'Play matchplay against the computer.'
-              : 'Set up a 501, 701 or 1001 matchplay game.'}
-        </p>
-      </div>
-
       <fieldset className={styles.field}>
         <legend className={styles.legend}>Play mode</legend>
         <div className={styles.segment}>
@@ -160,36 +148,29 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
                 autoComplete="off"
               />
             </label>
+          ) : playMode === 'vs-computer' ? (
+            <div className={clsx(styles.label, styles.playerLabel)}>
+              <label htmlFor="bot-difficulty">Computer level</label>
+              <select
+                id="bot-difficulty"
+                value={botDifficulty}
+                onPointerDown={(e) => {
+                  if (typeof e.currentTarget.showPicker !== 'function') return
+                  e.preventDefault()
+                  e.currentTarget.showPicker()
+                }}
+                onChange={(e) =>
+                  setBotDifficulty(e.target.value as BotDifficulty)
+                }
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
           ) : null}
         </div>
       </fieldset>
-
-      {playMode === 'vs-computer' ? (
-        <fieldset className={styles.field}>
-          <legend className={styles.legend}>Computer level</legend>
-          <div className={styles.segment}>
-            {(
-              [
-                ['easy', 'Easy'],
-                ['medium', 'Medium'],
-                ['hard', 'Hard'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={clsx(
-                  styles.segmentBtn,
-                  botDifficulty === value && styles.segmentActive,
-                )}
-                onClick={() => setBotDifficulty(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      ) : null}
 
       <fieldset className={styles.field}>
         <legend className={styles.legend}>Starting score</legend>

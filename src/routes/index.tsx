@@ -14,6 +14,13 @@ export const Route = createFileRoute('/')({
 function Home() {
   return (
     <main className={styles.page}>
+      <header className={styles.setupHeader}>
+        <div className={styles.eyebrow}>New match</div>
+        <h1 className={styles.title}>GameShot</h1>
+        <p className={styles.lede}>
+          Set up matchplay, solo practice, or a game against the computer.
+        </p>
+      </header>
       <MatchSetupForm />
     </main>
   )
