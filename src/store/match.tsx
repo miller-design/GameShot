@@ -145,7 +145,6 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const startMatch = useCallback((config: MatchConfig) => {
     const next = createMatch(config)
     setMatch(next)
-    persistMatch(next)
   }, [])
 
   /**
@@ -159,9 +158,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const submitVisit = useCallback((scored: number) => {
     setMatch((prev) => {
       if (!prev) return prev
-      const next = submitVisitPure(prev, scored)
-      persistMatch(next)
-      return next
+      return submitVisitPure(prev, scored)
     })
   }, [])
 
@@ -174,9 +171,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const editVisit = useCallback((visitIndex: number, scored: number) => {
     setMatch((prev) => {
       if (!prev) return prev
-      const next = editVisitPure(prev, visitIndex, scored)
-      persistMatch(next)
-      return next
+      return editVisitPure(prev, visitIndex, scored)
     })
   }, [])
 
@@ -189,9 +184,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const undo = useCallback(() => {
     setMatch((prev) => {
       if (!prev) return prev
-      const next = undoVisitPure(prev)
-      persistMatch(next)
-      return next
+      return undoVisitPure(prev)
     })
   }, [])
 
@@ -204,9 +197,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const confirmLeg = useCallback(() => {
     setMatch((prev) => {
       if (!prev) return prev
-      const next = confirmLegPure(prev)
-      persistMatch(next)
-      return next
+      return confirmLegPure(prev)
     })
   }, [])
 
@@ -214,9 +205,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     (dartsUsed: 1 | 2 | 3) => {
       setMatch((prev) => {
         if (!prev) return prev
-        const next = setPendingLegCheckoutDartsUsedPure(prev, dartsUsed)
-        persistMatch(next)
-        return next
+        return setPendingLegCheckoutDartsUsedPure(prev, dartsUsed)
       })
     },
     [],
@@ -230,7 +219,6 @@ export function MatchProvider({ children }: { children: ReactNode }) {
    */
   const clearMatch = useCallback(() => {
     setMatch(null)
-    persistMatch(null)
   }, [])
 
   /**
@@ -242,9 +230,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const clearBustFlag = useCallback(() => {
     setMatch((prev) => {
       if (!prev) return prev
-      const next = { ...prev, lastBust: false }
-      persistMatch(next)
-      return next
+      return { ...prev, lastBust: false }
     })
   }, [])
 

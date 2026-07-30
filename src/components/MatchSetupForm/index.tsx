@@ -91,24 +91,24 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
   }
 
   const opponentLabel =
-    playMode === 'vs-computer'
-      ? 'Computer'
-      : player2.trim() || 'Player 2'
+    playMode === 'vs-computer' ? 'Computer' : player2.trim() || 'Player 2'
 
   return (
     <form className={clsx(styles.root, className)} onSubmit={handleSubmit}>
       <div className={styles.eyebrow}>New match</div>
-      <h1 className={styles.title}>GameShot</h1>
-      <p className={styles.lede}>
-        {playMode === 'practice'
-          ? 'Solo practice — endless legs, no opponent.'
-          : playMode === 'vs-computer'
-            ? 'Play matchplay against the computer.'
-            : 'Set up a 501, 701 or 1001 matchplay game.'}
-      </p>
+      <div>
+        <h1 className={styles.title}>GameShot</h1>
+        <p className={styles.lede}>
+          {playMode === 'practice'
+            ? 'Solo practice — endless legs, no opponent.'
+            : playMode === 'vs-computer'
+              ? 'Play matchplay against the computer.'
+              : 'Set up a 501, 701 or 1001 matchplay game.'}
+        </p>
+      </div>
 
       <fieldset className={styles.field}>
-        <legend>Play mode</legend>
+        <legend className={styles.legend}>Play mode</legend>
         <div className={styles.segment}>
           {(
             [
@@ -133,10 +133,14 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
       </fieldset>
 
       <fieldset className={styles.field}>
-        <legend>{playMode === 'practice' ? 'Player' : 'Players'}</legend>
+        <legend className={styles.legend}>
+          {playMode === 'practice' ? 'Player' : 'Players'}
+        </legend>
         <div className={styles.row}>
           <label className={styles.label}>
-            {playMode === 'vs-computer' ? 'You' : 'Player 1'}
+            {playMode === 'vs-computer' || playMode === 'practice'
+              ? 'You'
+              : 'Player 1'}
             <input
               type="text"
               value={player1}
@@ -162,7 +166,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
 
       {playMode === 'vs-computer' ? (
         <fieldset className={styles.field}>
-          <legend>Computer level</legend>
+          <legend className={styles.legend}>Computer level</legend>
           <div className={styles.segment}>
             {(
               [
@@ -188,7 +192,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
       ) : null}
 
       <fieldset className={styles.field}>
-        <legend>Starting score</legend>
+        <legend className={styles.legend}>Starting score</legend>
         <div className={styles.segment}>
           {([501, 701, 1001] as StartingScore[]).map((score) => (
             <button
@@ -208,9 +212,26 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
 
       {playMode !== 'practice' ? (
         <>
-          <fieldset className={styles.field}>
-            <legend>Match format</legend>
+          <fieldset className={clsx(styles.field, styles.formatField)}>
+            <legend className={styles.legend}>Match format</legend>
             <div className={styles.segment}>
+              <input
+                type="number"
+                className={styles.legsInput}
+                aria-label="Legs"
+                min={1}
+                max={21}
+                value={legsTarget}
+                onChange={(e) => {
+                  const raw = e.target.value
+                  if (raw === '') {
+                    setLegsTarget('')
+                    return
+                  }
+                  const parsed = Number(raw)
+                  if (!Number.isNaN(parsed)) setLegsTarget(parsed)
+                }}
+              />
               <button
                 type="button"
                 className={clsx(
@@ -232,28 +253,10 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
                 Best of
               </button>
             </div>
-            <label className={styles.label}>
-              Legs
-              <input
-                type="number"
-                min={1}
-                max={21}
-                value={legsTarget}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  if (raw === '') {
-                    setLegsTarget('')
-                    return
-                  }
-                  const parsed = Number(raw)
-                  if (!Number.isNaN(parsed)) setLegsTarget(parsed)
-                }}
-              />
-            </label>
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend>First throw</legend>
+            <legend className={styles.legend}>First throw</legend>
             <div className={styles.segment}>
               <button
                 type="button"
@@ -263,7 +266,8 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
                 )}
                 onClick={() => setFirstThrower(0)}
               >
-                {player1.trim() || (playMode === 'vs-computer' ? 'You' : 'Player 1')}
+                {player1.trim() ||
+                  (playMode === 'vs-computer' ? 'You' : 'Player 1')}
               </button>
               <button
                 type="button"
