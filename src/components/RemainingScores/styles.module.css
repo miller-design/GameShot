@@ -19,7 +19,7 @@
     justify-content: center;
     height: 100%;
     min-height: 0;
-    padding-block: 0.35rem;
+    padding-block: 0.15rem;
     border-radius: 0.5rem;
     border: 2px solid transparent;
     background: var(--color-surface);
@@ -43,8 +43,8 @@
 
   & .score {
     font-family: var(--font-mono);
-    /* Size against the panel, not the full viewport, so 501 fits the remaining row. */
-    font-size: clamp(var(--fs-2xl), 40cqh, 5.5rem);
+    /* Fill most of the panel height; width clamp keeps 3-digit scores inside. */
+    font-size: clamp(var(--fs-2xl), min(72cqh, 42cqw), 7.5rem);
     font-weight: var(--fw-extrabold);
     font-variant-numeric: tabular-nums;
     line-height: var(--lh-tightest);
