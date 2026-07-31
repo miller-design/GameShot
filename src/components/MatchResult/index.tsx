@@ -56,8 +56,12 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
 
   const needed = legsToWin(match.config)
   const isPractice = match.config.playMode === 'practice'
+  const is121 = match.config.gameType === '121' && match.game121 !== null
   const decidingLeg =
-    !isPractice && legWinner !== null && match.legsWon[legWinner] + 1 >= needed
+    !is121 &&
+    !isPractice &&
+    legWinner !== null &&
+    match.legsWon[legWinner] + 1 >= needed
   const isPendingCheckout = matchWinner === null && legWinner !== null
 
   const winnerIndex: PlayerIndex = (matchWinner ?? legWinner) as PlayerIndex
@@ -196,7 +200,7 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
         <header className={styles.gameShotHeader}>
           <h2 className={styles.title}>
             <span className={styles.eyebrowInline}>
-              Game shot
+              {is121 ? '121 cleared' : 'Game shot'}
               {!isPractice && decidingLeg ? (
                 <>
                   <span className={styles.eyebrowSep} aria-hidden="true">
@@ -210,7 +214,11 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
               —
             </span>
             <span className={styles.titleName}>
-              {isPractice ? 'Leg complete' : winnerName}
+              {is121
+                ? `${winnerName} · ${match.game121!.targets[winnerIndex]}`
+                : isPractice
+                  ? 'Leg complete'
+                  : winnerName}
             </span>
           </h2>
         </header>

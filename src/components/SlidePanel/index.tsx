@@ -110,8 +110,7 @@ const SlidePanel = ({
   const swipeToClose = enableSwipeToClose && onRequestClose !== undefined
 
   const shouldCloseOnBackdrop =
-    onRequestClose !== undefined &&
-    (closeOnBackdropClick ?? true)
+    onRequestClose !== undefined && (closeOnBackdropClick ?? true)
 
   // Mount / unmount the sheet for enter + exit animations
   useEffect(() => {
@@ -245,7 +244,7 @@ const SlidePanel = ({
       dragY >= CLOSE_DISTANCE || velocityY.current >= CLOSE_VELOCITY
     if (shouldClose) {
       blurActiveElement()
-      onRequestClose?.()
+      onRequestClose()
       return
     }
 
@@ -264,7 +263,7 @@ const SlidePanel = ({
         shouldCloseOnBackdrop
           ? () => {
               blurActiveElement()
-              onRequestClose?.()
+              onRequestClose()
             }
           : undefined
       }
@@ -329,4 +328,3 @@ const SlidePanel = ({
 }
 
 export default SlidePanel
-

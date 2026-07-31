@@ -70,7 +70,6 @@ function previewEditInput(
   const scored = Number(buffer)
   const preview = previewEditVisit(match, visitIndex, scored)
   const visit = preview.currentLeg.visits[visitIndex]
-  if (!visit) return null
   return { scored: buffer, toGo: visit.remaining, bust: visit.bust }
 }
 
@@ -204,8 +203,8 @@ const ScoreHistory = ({
           const highlightP0 = canHighlight && isNextP0
           const highlightP1 = canHighlight && isNextP1
           const showSpine = row.p0 !== null || (!isPractice && row.p1 !== null)
-          const p0AbsIndex = row.p0 ? p0VisitAbsIndices[index] ?? null : null
-          const p1AbsIndex = row.p1 ? p1VisitAbsIndices[index] ?? null : null
+          const p0AbsIndex = row.p0 ? (p0VisitAbsIndices[index] ?? null) : null
+          const p1AbsIndex = row.p1 ? (p1VisitAbsIndices[index] ?? null) : null
           const p0EditPreview =
             p0AbsIndex !== null && p0AbsIndex === editingVisitIndex
               ? previewEditInput(match, p0AbsIndex, inputBuffer)

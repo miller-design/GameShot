@@ -23,6 +23,7 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
   const names = match.config.playerNames
   const [legs0, legs1] = match.legsWon
   const isPractice = match.config.playMode === 'practice'
+  const is121 = match.config.gameType === '121' && match.game121 !== null
 
   /**
    * Renders a player name with an optional turn asterisk.
@@ -58,6 +59,14 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
         )}
         <span>{label}</span>
       </div>
+    )
+  }
+
+  if (is121) {
+    return (
+      <header className={clsx(styles.root, styles.practice, className)}>
+        {renderName(0, 'left', names[0])}
+      </header>
     )
   }
 
