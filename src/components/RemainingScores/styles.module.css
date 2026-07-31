@@ -19,7 +19,9 @@
     justify-content: center;
     height: 100%;
     min-height: 0;
-    padding-block: 0.15rem;
+    box-sizing: border-box;
+    padding-block: 0.35rem;
+    padding-inline: 0.35rem;
     border-radius: 0.5rem;
     border: 2px solid transparent;
     background: var(--color-surface);
@@ -43,11 +45,11 @@
 
   & .score {
     font-family: var(--font-mono);
-    /* Fill most of the panel height; width clamp keeps 3-digit scores inside. */
-    font-size: clamp(var(--fs-2xl), min(72cqh, 42cqw), 7.5rem);
+    /* Clear padding + border without shrinking the score too far. */
+    font-size: clamp(var(--fs-2xl), min(54cqh, 38cqw), 7.5rem);
     font-weight: var(--fw-extrabold);
     font-variant-numeric: tabular-nums;
-    line-height: var(--lh-tightest);
+    line-height: 1;
     letter-spacing: -0.04em;
   }
 }
