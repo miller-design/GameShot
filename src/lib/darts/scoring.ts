@@ -1,5 +1,6 @@
 import { isLegalVisitScore } from '#/lib/darts/dartScores'
 import type {
+  Game121State,
   LegState,
   MatchConfig,
   MatchState,
@@ -7,6 +8,10 @@ import type {
   PlayerStats,
   Visit,
 } from '#/types/match'
+
+const GAME_121_START = 121
+const GAME_121_MAX = 170
+const VISIT_DARTS = 3
 
 /**
  * Returns how many legs a player needs to win the match.
@@ -50,6 +55,26 @@ export function createLeg(
   }
 }
 
+function create121State(): Game121State {
+  return {
+    targets: [GAME_121_START, GAME_121_START],
+    lockedBases: [GAME_121_START, GAME_121_START],
+  }
+}
+
+function create121AttemptLeg(
+  game121: Game121State,
+  player: PlayerIndex,
+): LegState {
+  return {
+    visits: [],
+    remaining: [...game121.targets],
+    currentPlayer: player,
+    firstThrower: player,
+    winner: null,
+  }
+}
+
 /**
  * Creates a new match from setup config.
  *
@@ -67,10 +92,27 @@ export function createLeg(
  * })
  */
 export function createMatch(config: MatchConfig): MatchState {
+  const matchConfig: MatchConfig =
+    config.gameType === '121'
+      ? {
+          ...config,
+          playMode: 'practice',
+          playerNames: [config.playerNames[0] || '121', ''],
+          startingScore: 121,
+          mode: 'first-to',
+          legsTarget: 1,
+          firstThrower: 0,
+        }
+      : config
+  const game121 = matchConfig.gameType === '121' ? create121State() : null
   return {
-    config,
+    config: matchConfig,
     legsWon: [0, 0],
-    currentLeg: createLeg(config.startingScore, config.firstThrower),
+    game121,
+    currentLeg:
+      game121 === null
+        ? createLeg(matchConfig.startingScore, matchConfig.firstThrower)
+        : create121AttemptLeg(game121, matchConfig.firstThrower),
     completedLegs: [],
     matchWinner: null,
     lastBust: false,
@@ -132,9 +174,7 @@ export function isValidCheckout(remaining: number): boolean {
  * The app records checkout only as a *visit total* (0–180). The minimum
  * therefore depends only on the checkout number itself.
  */
-export function minDartsForCheckout(
-  checkout: number,
-): 1 | 2 | 3 {
+export function minDartsForCheckout(checkout: number): 1 | 2 | 3 {
   if (!isValidCheckout(checkout)) return 3
 
   // 1-dart checkout: bullseye (50) or any double (2..40 even)
@@ -203,8 +243,9 @@ export function evaluateVisit(
 }
 
 /**
- * Applies a visit to the match. On checkout, sets pendingLegWinner
- * (caller should confirm before starting the next leg).
+ * Applies a visit to the match. On X01 checkout, sets pendingLegWinner
+ * (caller should confirm before starting the next leg). 121 checkouts advance
+ * to the next target immediately.
  *
  * @param state - Current match state
  * @param scored - Visit total (0–180)
@@ -244,6 +285,29 @@ export function submitVisit(state: MatchState, scored: number): MatchState {
   const visits = [...leg.visits, visit]
 
   if (result.checkout) {
+    if (state.config.gameType === '121' && state.game121 !== null) {
+      const checkoutVisits = visits.map((v, index) =>
+        index === visits.length - 1
+          ? { ...v, dartsUsed: minDartsForCheckout(scored) }
+          : v,
+      )
+
+      return complete121Attempt(
+        {
+          ...state,
+          currentLeg: {
+            ...leg,
+            visits: checkoutVisits,
+            remaining: nextRemaining,
+            winner: player,
+          },
+          lastBust: false,
+        },
+        player,
+        true,
+      )
+    }
+
     return {
       ...state,
       currentLeg: {
@@ -255,6 +319,37 @@ export function submitVisit(state: MatchState, scored: number): MatchState {
       lastBust: false,
       pendingLegWinner: player,
       pendingLegCheckoutDartsUsed: minDartsForCheckout(scored),
+    }
+  }
+
+  if (state.config.gameType === '121' && state.game121 !== null) {
+    const visitsByPlayer = visits.filter((v) => v.player === player).length
+    if (visitsByPlayer >= state.config.game121DartsAllowed / VISIT_DARTS) {
+      return complete121Attempt(
+        {
+          ...state,
+          currentLeg: {
+            ...leg,
+            visits,
+            remaining: nextRemaining,
+            currentPlayer: player,
+          },
+          lastBust: false,
+        },
+        player,
+        false,
+      )
+    }
+
+    return {
+      ...state,
+      currentLeg: {
+        ...leg,
+        visits,
+        remaining: nextRemaining,
+        currentPlayer: player,
+      },
+      lastBust: result.bust,
     }
   }
 
@@ -271,6 +366,49 @@ export function submitVisit(state: MatchState, scored: number): MatchState {
       currentPlayer: nextPlayer,
     },
     lastBust: result.bust,
+  }
+}
+
+function complete121Attempt(
+  state: MatchState,
+  player: PlayerIndex,
+  checkout: boolean,
+): MatchState {
+  const game121 = state.game121
+  if (game121 === null) return state
+
+  const targets: [number, number] = [...game121.targets]
+  const lockedBases: [number, number] = [...game121.lockedBases]
+  const currentTarget = targets[player]
+  const playerVisits = state.currentLeg.visits.filter(
+    (v) => v.player === player,
+  )
+
+  if (checkout) {
+    targets[player] = Math.min(
+      GAME_121_MAX,
+      currentTarget + state.config.game121Increment,
+    )
+    if (playerVisits.length === 1) {
+      lockedBases[player] = Math.max(lockedBases[player], currentTarget)
+    }
+  } else {
+    targets[player] = Math.max(lockedBases[player], currentTarget - 1)
+  }
+
+  const nextGame121 = { targets, lockedBases }
+  const legsWon: [number, number] = [...state.legsWon]
+  if (checkout) legsWon[player] += 1
+
+  return {
+    ...state,
+    game121: nextGame121,
+    legsWon,
+    completedLegs: [...state.completedLegs, state.currentLeg],
+    currentLeg: create121AttemptLeg(nextGame121, 0),
+    pendingLegWinner: null,
+    pendingLegCheckoutDartsUsed: null,
+    lastBust: false,
   }
 }
 
@@ -311,6 +449,18 @@ export function confirmLeg(state: MatchState): MatchState {
     ...state.currentLeg,
     visits: updatedVisits,
     winner,
+  }
+
+  if (state.config.gameType === '121' && state.game121 !== null) {
+    return complete121Attempt(
+      {
+        ...state,
+        currentLeg: finishedLeg,
+        pendingLegCheckoutDartsUsed: checkoutDartsUsed,
+      },
+      winner,
+      true,
+    )
   }
 
   // Practice never ends the session — legsWon[0] tracks legs completed.
@@ -409,7 +559,7 @@ export function undoVisit(state: MatchState): MatchState {
   const last = leg.visits[leg.visits.length - 1]
 
   // Rebuild remaining from starting score + visits
-  const remaining = rebuildRemaining(state.config.startingScore, visits)
+  const remaining = rebuildRemainingForLeg(state.currentLeg, visits)
   const currentPlayer = last.player
 
   return {
@@ -457,10 +607,7 @@ export function previewEditVisit(
 
   // Keep earlier visits unchanged; replay from the edited visit forward.
   const keptVisits = leg.visits.slice(0, visitIndex)
-  const replayStartRemaining = rebuildRemaining(
-    state.config.startingScore,
-    keptVisits,
-  )
+  const replayStartRemaining = rebuildRemainingForLeg(leg, keptVisits)
 
   const replayRemaining: [number, number] = [...replayStartRemaining]
   const updatedVisits: Visit[] = [...keptVisits]
@@ -503,6 +650,9 @@ export function previewEditVisit(
     if (winner !== null) {
       // On checkout, submitVisit does not advance turn; the thrower stays current.
       return winner
+    }
+    if (state.config.gameType === '121') {
+      return leg.currentPlayer
     }
     // Practice is solo — never advance to player 1 (same as submitVisit).
     if (state.config.playMode === 'practice') {
@@ -623,6 +773,34 @@ export function rebuildRemaining(
   visits: Visit[],
 ): [number, number] {
   const remaining: [number, number] = [startingScore, startingScore]
+  for (const visit of visits) {
+    remaining[visit.player] = visit.remaining
+  }
+  return remaining
+}
+
+function rebuildRemainingForLeg(
+  leg: LegState,
+  visits: Visit[],
+): [number, number] {
+  const starting: [number, number] = [...leg.remaining]
+
+  for (const player of [0, 1] as const) {
+    const first = leg.visits.find((v) => v.player === player)
+    if (!first) continue
+    starting[player] = first.bust
+      ? first.remaining
+      : first.remaining + first.scored
+  }
+
+  return rebuildRemainingByPlayerStart(starting, visits)
+}
+
+function rebuildRemainingByPlayerStart(
+  starting: [number, number],
+  visits: Visit[],
+): [number, number] {
+  const remaining: [number, number] = [...starting]
   for (const visit of visits) {
     remaining[visit.player] = visit.remaining
   }

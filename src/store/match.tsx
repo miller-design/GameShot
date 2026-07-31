@@ -16,7 +16,13 @@ import {
   setPendingLegCheckoutDartsUsed as setPendingLegCheckoutDartsUsedPure,
   undoVisit as undoVisitPure,
 } from '#/lib/darts/scoring'
-import type { MatchConfig, MatchState, PlayMode } from '#/types/match'
+import type {
+  Game121DartsAllowed,
+  GameType,
+  MatchConfig,
+  MatchState,
+  PlayMode,
+} from '#/types/match'
 
 const STORAGE_KEY = 'gameshot-match'
 
@@ -39,6 +45,10 @@ const VALID_PLAY_MODES: ReadonlySet<PlayMode> = new Set([
   'matchplay',
   'practice',
 ])
+const VALID_GAME_TYPES: ReadonlySet<GameType> = new Set(['x01', '121'])
+const VALID_121_DARTS_ALLOWED: ReadonlySet<Game121DartsAllowed> = new Set([
+  6, 9, 12,
+])
 
 /**
  * Normalizes persisted match JSON so older sessions without playMode still load.
@@ -51,20 +61,49 @@ const VALID_PLAY_MODES: ReadonlySet<PlayMode> = new Set([
  */
 function normalizeStoredMatch(raw: unknown): MatchState | null {
   if (!raw || typeof raw !== 'object') return null
-  const state = raw as MatchState
+  const state = raw as Partial<MatchState>
   if (!state.config || typeof state.config !== 'object') return null
+  const config = state.config as Partial<MatchConfig>
 
-  const playMode = VALID_PLAY_MODES.has(state.config.playMode)
-    ? state.config.playMode
+  const playMode = VALID_PLAY_MODES.has(config.playMode as PlayMode)
+    ? (config.playMode as PlayMode)
     : 'matchplay'
+  const gameType = VALID_GAME_TYPES.has(config.gameType as GameType)
+    ? (config.gameType as GameType)
+    : 'x01'
+  const game121DartsAllowed = VALID_121_DARTS_ALLOWED.has(
+    config.game121DartsAllowed as Game121DartsAllowed,
+  )
+    ? (config.game121DartsAllowed as Game121DartsAllowed)
+    : 9
+  const game121Increment = Math.max(
+    1,
+    Math.min(49, Math.floor(Number(config.game121Increment) || 1)),
+  )
+  const playerNames: [string, string] =
+    gameType === '121'
+      ? [config.playerNames?.[0] || '121', '']
+      : [
+          config.playerNames?.[0] || 'Player 1',
+          config.playerNames?.[1] || 'Player 2',
+        ]
 
   return {
     ...state,
     config: {
       ...state.config,
-      playMode,
+      gameType,
+      playMode: gameType === '121' ? 'practice' : playMode,
+      playerNames,
+      startingScore: gameType === '121' ? 121 : (config.startingScore ?? 501),
+      mode: gameType === '121' ? 'first-to' : (config.mode ?? 'best-of'),
+      legsTarget: gameType === '121' ? 1 : (config.legsTarget ?? 5),
+      firstThrower: gameType === '121' ? 0 : (config.firstThrower ?? 0),
+      game121Increment,
+      game121DartsAllowed,
     },
-  }
+    game121: gameType === '121' ? (state.game121 ?? null) : null,
+  } as MatchState
 }
 
 /**
@@ -133,6 +172,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
    *
    * @example
    * startMatch({
+   *   gameType: 'x01',
    *   playMode: 'matchplay',
    *   playerNames: ['A','B'],
    *   startingScore: 501,
@@ -200,15 +240,12 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const setPendingLegCheckoutDartsUsed = useCallback(
-    (dartsUsed: 1 | 2 | 3) => {
-      setMatch((prev) => {
-        if (!prev) return prev
-        return setPendingLegCheckoutDartsUsedPure(prev, dartsUsed)
-      })
-    },
-    [],
-  )
+  const setPendingLegCheckoutDartsUsed = useCallback((dartsUsed: 1 | 2 | 3) => {
+    setMatch((prev) => {
+      if (!prev) return prev
+      return setPendingLegCheckoutDartsUsedPure(prev, dartsUsed)
+    })
+  }, [])
 
   /**
    * Clears the active match (exit / new match).

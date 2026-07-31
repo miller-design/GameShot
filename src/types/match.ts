@@ -3,7 +3,13 @@
  */
 
 /** Supported starting scores for a leg. */
-export type StartingScore = 501 | 701 | 1001
+export type StartingScore = 121 | 501 | 701 | 1001
+
+/** Gameplay ruleset. */
+export type GameType = 'x01' | '121'
+
+/** Dart allowance for one 121 checkout attempt. */
+export type Game121DartsAllowed = 6 | 9 | 12
 
 /** How the match is decided. */
 export type MatchMode = 'first-to' | 'best-of'
@@ -16,6 +22,7 @@ export type PlayerIndex = 0 | 1
 
 /** Configuration chosen on the setup screen. */
 export type MatchConfig = {
+  gameType: GameType
   playMode: PlayMode
   playerNames: [string, string]
   startingScore: StartingScore
@@ -24,6 +31,10 @@ export type MatchConfig = {
   legsTarget: number
   /** Who throws first in leg 1. */
   firstThrower: PlayerIndex
+  /** 121 only: target increase after a successful checkout. */
+  game121Increment: number
+  /** 121 only: darts allowed per checkout attempt. */
+  game121DartsAllowed: Game121DartsAllowed
 }
 
 /** A single visit (up to 3 darts) recorded during a leg. */
@@ -61,6 +72,7 @@ export type LegState = {
 export type MatchState = {
   config: MatchConfig
   legsWon: [number, number]
+  game121: Game121State | null
   currentLeg: LegState
   /** Legs completed (for history / rematch). */
   completedLegs: LegState[]
@@ -75,6 +87,12 @@ export type MatchState = {
    * Only relevant when `pendingLegWinner` is set.
    */
   pendingLegCheckoutDartsUsed: 1 | 2 | 3 | null
+}
+
+/** 121 training progression. */
+export type Game121State = {
+  targets: [number, number]
+  lockedBases: [number, number]
 }
 
 /** Per-player live stats for the current match. */

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   editVisit,
   confirmLeg,
+  createLeg,
   createMatch,
   computePlayerStats,
   evaluateVisit,
@@ -16,12 +17,15 @@ import {
 import type { MatchConfig } from '#/types/match'
 
 const baseConfig: MatchConfig = {
+  gameType: 'x01',
   playMode: 'matchplay',
   playerNames: ['Alice', 'Bob'],
   startingScore: 501,
   mode: 'first-to',
   legsTarget: 2,
   firstThrower: 0,
+  game121Increment: 1,
+  game121DartsAllowed: 9,
 }
 
 describe('legsToWin', () => {
@@ -492,12 +496,15 @@ describe('editVisit', () => {
 
 describe('practice mode', () => {
   const practiceConfig: MatchConfig = {
+    gameType: 'x01',
     playMode: 'practice',
     playerNames: ['Solo', ''],
     startingScore: 501,
     mode: 'first-to',
     legsTarget: 1,
     firstThrower: 0,
+    game121Increment: 1,
+    game121DartsAllowed: 9,
   }
 
   it('keeps currentPlayer on 0 after a normal visit', () => {
@@ -539,5 +546,123 @@ describe('practice mode', () => {
     expect(state.currentLeg.remaining[0]).toBe(446)
     expect(state.currentLeg.visits).toHaveLength(2)
     expect(state.currentLeg.visits.every((v) => v.player === 0)).toBe(true)
+  })
+})
+
+describe('121 game', () => {
+  const game121Config: MatchConfig = {
+    gameType: '121',
+    playMode: 'practice',
+    playerNames: ['Solo', ''],
+    startingScore: 121,
+    mode: 'first-to',
+    legsTarget: 1,
+    firstThrower: 0,
+    game121Increment: 1,
+    game121DartsAllowed: 9,
+  }
+
+  it('starts at 121 and advances after a checkout', () => {
+    let state = createMatch(game121Config)
+    expect(state.currentLeg.remaining[0]).toBe(121)
+    expect(state.game121?.targets[0]).toBe(121)
+
+    state = submitVisit(state, 121)
+
+    expect(state.game121?.targets[0]).toBe(122)
+    expect(state.game121?.lockedBases[0]).toBe(121)
+    expect(state.currentLeg.remaining[0]).toBe(122)
+    expect(state.legsWon[0]).toBe(1)
+    expect(state.completedLegs).toHaveLength(1)
+    expect(state.completedLegs[0].visits[0].dartsUsed).toBe(3)
+    expect(state.pendingLegWinner).toBe(null)
+  })
+
+  it('advances by the configured increment after a checkout', () => {
+    let state = createMatch({
+      ...game121Config,
+      game121Increment: 5,
+    })
+
+    state = submitVisit(state, 121)
+
+    expect(state.game121?.targets[0]).toBe(126)
+    expect(state.currentLeg.remaining[0]).toBe(126)
+  })
+
+  it('fails after the configured dart allowance', () => {
+    let state = createMatch({
+      ...game121Config,
+      game121DartsAllowed: 6,
+    })
+
+    state = submitVisit(state, 0)
+    expect(state.currentLeg.visits).toHaveLength(1)
+    state = submitVisit(state, 0)
+
+    expect(state.completedLegs).toHaveLength(1)
+    expect(state.currentLeg.visits).toHaveLength(0)
+    expect(state.currentLeg.remaining[0]).toBe(121)
+  })
+
+  it('drops only to the locked base after a failed 9-dart attempt', () => {
+    let state = createMatch(game121Config)
+    state = submitVisit(state, 121)
+    expect(state.game121?.targets[0]).toBe(122)
+
+    state = submitVisit(state, 0)
+    state = submitVisit(state, 0)
+    state = submitVisit(state, 0)
+
+    expect(state.game121?.targets[0]).toBe(121)
+    expect(state.currentLeg.remaining[0]).toBe(121)
+    expect(state.completedLegs).toHaveLength(2)
+  })
+
+  it('does not lock the base for checkouts after the first visit', () => {
+    let state = createMatch(game121Config)
+    state = {
+      ...state,
+      game121: {
+        targets: [127, 121],
+        lockedBases: [121, 121],
+      },
+      currentLeg: createLeg(127, 0),
+    }
+
+    state = submitVisit(state, 60)
+    state = submitVisit(state, 67)
+
+    expect(state.game121?.targets[0]).toBe(128)
+    expect(state.game121?.lockedBases[0]).toBe(121)
+  })
+
+  it('forces 121 to shared-score solo even when given matchplay config', () => {
+    let state = createMatch({
+      ...game121Config,
+      playMode: 'matchplay',
+      playerNames: ['Alice', 'Bob'],
+    })
+
+    expect(state.config.playMode).toBe('practice')
+    expect(state.config.playerNames).toEqual(['Alice', ''])
+
+    state = submitVisit(state, 0)
+    expect(state.currentLeg.currentPlayer).toBe(0)
+    state = submitVisit(state, 0)
+    state = submitVisit(state, 0)
+
+    expect(state.currentLeg.currentPlayer).toBe(0)
+    expect(state.currentLeg.remaining).toEqual([121, 121])
+  })
+
+  it('keeps the active player after editing a 121 attempt visit', () => {
+    let state = createMatch(game121Config)
+
+    state = submitVisit(state, 60)
+    state = editVisit(state, 0, 57)
+
+    expect(state.currentLeg.currentPlayer).toBe(0)
+    expect(state.currentLeg.remaining[0]).toBe(64)
   })
 })
