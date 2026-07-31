@@ -10,12 +10,12 @@
 
 .logo {
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06rem;
   text-transform: uppercase;
   text-decoration: none;
-  color: var(--color-text-muted);
+  color: var(--color-accent);
   transition: color 0.15s ease;
 
   &:hover {
