@@ -1,6 +1,6 @@
 import clsx from 'clsx'
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
 import { useMatch } from '#/store/match'
@@ -43,6 +43,69 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
   const [mode, setMode] = useState<MatchMode>('best-of')
   const [legsTarget, setLegsTarget] = useState<number | ''>(5)
   const [firstThrower, setFirstThrower] = useState<PlayerIndex>(0)
+  const [panelHeight, setPanelHeight] = useState<number | null>(null)
+
+  const panelRef = useRef<HTMLDivElement>(null)
+  const gameFieldRef = useRef<HTMLFieldSetElement>(null)
+  const optionsStackRef = useRef<HTMLDivElement>(null)
+
+  /**
+   * Measures the tallest panel layout and writes `--setup-panel-height`
+   * so the modal stays that size across game options. Re-runs on resize
+   * and orientation change.
+   *
+   * @example
+   * measurePanelHeight()
+   */
+  function measurePanelHeight() {
+    const panel = panelRef.current
+    const gameField = gameFieldRef.current
+    const optionsStack = optionsStackRef.current
+    if (!panel || !gameField || !optionsStack) return
+
+    const computed = getComputedStyle(panel)
+    const paddingY =
+      Number.parseFloat(computed.paddingTop) +
+      Number.parseFloat(computed.paddingBottom)
+    const gap = Number.parseFloat(computed.rowGap || computed.gap) || 0
+
+    let tallestVariant = 0
+    for (const variant of optionsStack.children) {
+      if (variant instanceof HTMLElement) {
+        tallestVariant = Math.max(tallestVariant, variant.scrollHeight)
+      }
+    }
+
+    const nextHeight = Math.ceil(
+      gameField.offsetHeight + gap + tallestVariant + paddingY,
+    )
+    setPanelHeight((current) => (current === nextHeight ? current : nextHeight))
+  }
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current
+    const gameField = gameFieldRef.current
+    const optionsStack = optionsStackRef.current
+    if (!panel || !gameField || !optionsStack) return
+
+    measurePanelHeight()
+
+    const observer = new ResizeObserver(measurePanelHeight)
+    observer.observe(gameField)
+    observer.observe(optionsStack)
+    for (const variant of optionsStack.children) {
+      if (variant instanceof Element) observer.observe(variant)
+    }
+
+    window.addEventListener('resize', measurePanelHeight)
+    window.addEventListener('orientationchange', measurePanelHeight)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measurePanelHeight)
+      window.removeEventListener('orientationchange', measurePanelHeight)
+    }
+  }, [])
 
   /**
    * Validates and starts a match, then navigates to the board.
@@ -109,40 +172,35 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
 
   const opponentLabel = player2.trim() || 'Player 2'
 
-  return (
-    <form className={clsx(styles.root, className)} onSubmit={handleSubmit}>
-      <fieldset className={styles.field}>
-        <legend className={styles.legend}>Game</legend>
-        <div className={styles.segment}>
-          {(
-            [
-              ['x01', '501 / X01'],
-              ['121', '121'],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={clsx(
-                styles.segmentBtn,
-                gameType === value && styles.segmentActive,
-              )}
-              onClick={() => setGameType(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+  const isPractice = playMode === 'practice'
+  const isX01 = gameType === 'x01'
+  const is121 = gameType === '121'
 
-      {gameType === 'x01' ? (
-        <fieldset className={styles.field}>
-          <legend className={styles.legend}>Play mode</legend>
+  const isReady = panelHeight != null
+
+  const panelStyle = {
+    ...(isReady ? { '--setup-panel-height': `${panelHeight}px` } : {}),
+  } as CSSProperties
+
+  return (
+    <form
+      className={clsx(styles.root, isReady && styles.ready, className)}
+      onSubmit={handleSubmit}
+      aria-busy={!isReady}
+    >
+      <div
+        ref={panelRef}
+        className={styles.panel}
+        style={panelStyle}
+        inert={isReady ? undefined : true}
+      >
+        <fieldset ref={gameFieldRef} className={styles.field}>
+          <legend className={styles.legend}>Game</legend>
           <div className={styles.segment}>
             {(
               [
-                ['matchplay', 'Matchplay'],
-                ['practice', 'Practice'],
+                ['x01', '501 / X01'],
+                ['121', '121'],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -150,193 +208,260 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
                 type="button"
                 className={clsx(
                   styles.segmentBtn,
-                  playMode === value && styles.segmentActive,
+                  gameType === value && styles.segmentActive,
                 )}
-                onClick={() => setPlayMode(value)}
+                onClick={() => setGameType(value)}
               >
                 {label}
               </button>
             ))}
           </div>
         </fieldset>
-      ) : null}
 
-      {gameType === 'x01' ? (
-        <fieldset className={styles.field}>
-          <legend className={styles.legend}>
-            {playMode === 'practice' ? 'Player' : 'Players'}
-          </legend>
-          <div className={styles.row}>
-            <label className={clsx(styles.label, styles.playerLabel)}>
-              {playMode === 'practice' ? 'You' : 'Player 1'}
-              <input
-                type="text"
-                value={player1}
-                onChange={(e) => setPlayer1(e.target.value)}
-                maxLength={24}
-                autoComplete="off"
-              />
-            </label>
-            {playMode === 'matchplay' ? (
-              <label className={clsx(styles.label, styles.playerLabel)}>
-                Player 2
+        {/*
+          Stack both game-type layouts in one grid cell so the panel
+          always sizes to the tallest option (X01 matchplay).
+        */}
+        <div ref={optionsStackRef} className={styles.optionsStack}>
+          <div
+            className={clsx(
+              styles.optionsVariant,
+              isX01 && styles.optionsActive,
+            )}
+            inert={isX01 ? undefined : true}
+            aria-hidden={!isX01}
+          >
+            <fieldset className={styles.field}>
+              <legend className={styles.legend}>Play mode</legend>
+              <div className={styles.segment}>
+                {(
+                  [
+                    ['matchplay', 'Matchplay'],
+                    ['practice', 'Practice'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={clsx(
+                      styles.segmentBtn,
+                      playMode === value && styles.segmentActive,
+                    )}
+                    onClick={() => setPlayMode(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className={styles.field}>
+              <legend className={styles.legend}>
+                {isPractice ? 'Player' : 'Players'}
+              </legend>
+              <div className={styles.row}>
+                <label className={clsx(styles.label, styles.playerLabel)}>
+                  {isPractice ? 'You' : 'Player 1'}
+                  <input
+                    type="text"
+                    value={player1}
+                    onChange={(e) => setPlayer1(e.target.value)}
+                    maxLength={24}
+                    autoComplete="off"
+                  />
+                </label>
+                <label
+                  className={clsx(
+                    styles.label,
+                    styles.playerLabel,
+                    isPractice && styles.reservedHidden,
+                  )}
+                  inert={isPractice || undefined}
+                  aria-hidden={isPractice}
+                >
+                  Player 2
+                  <input
+                    type="text"
+                    value={player2}
+                    onChange={(e) => setPlayer2(e.target.value)}
+                    maxLength={24}
+                    autoComplete="off"
+                    tabIndex={isPractice ? -1 : undefined}
+                  />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset className={styles.field}>
+              <legend className={styles.legend}>Starting score</legend>
+              <div className={styles.segment}>
+                {([501, 701, 1001] as StartingScore[]).map((score) => (
+                  <button
+                    key={score}
+                    type="button"
+                    className={clsx(
+                      styles.segmentBtn,
+                      startingScore === score && styles.segmentActive,
+                    )}
+                    onClick={() => setStartingScore(score)}
+                  >
+                    {score}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset
+              className={clsx(
+                styles.field,
+                styles.formatField,
+                isPractice && styles.reservedHidden,
+              )}
+              inert={isPractice || undefined}
+              aria-hidden={isPractice}
+            >
+              <legend className={styles.legend}>Match format</legend>
+              <div className={styles.segment}>
                 <input
-                  type="text"
-                  value={player2}
-                  onChange={(e) => setPlayer2(e.target.value)}
-                  maxLength={24}
-                  autoComplete="off"
+                  type="number"
+                  className={styles.legsInput}
+                  aria-label="Legs"
+                  min={1}
+                  max={21}
+                  value={legsTarget}
+                  tabIndex={isPractice ? -1 : undefined}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    if (raw === '') {
+                      setLegsTarget('')
+                      return
+                    }
+                    const parsed = Number(raw)
+                    if (!Number.isNaN(parsed)) setLegsTarget(parsed)
+                  }}
                 />
-              </label>
-            ) : null}
-          </div>
-        </fieldset>
-      ) : null}
-
-      {gameType === 'x01' ? (
-        <fieldset className={styles.field}>
-          <legend className={styles.legend}>Starting score</legend>
-          <div className={styles.segment}>
-            {([501, 701, 1001] as StartingScore[]).map((score) => (
-              <button
-                key={score}
-                type="button"
-                className={clsx(
-                  styles.segmentBtn,
-                  startingScore === score && styles.segmentActive,
-                )}
-                onClick={() => setStartingScore(score)}
-              >
-                {score}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      ) : null}
-
-      {gameType === '121' ? (
-        <>
-          <fieldset className={clsx(styles.field, styles.formatField)}>
-            <legend className={styles.legend}>Target increase</legend>
-            <div className={styles.segment}>
-              <input
-                type="number"
-                className={styles.legsInput}
-                aria-label="121 target increase"
-                min={1}
-                max={49}
-                value={game121Increment}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  if (raw === '') {
-                    setGame121Increment('')
-                    return
-                  }
-                  const parsed = Number(raw)
-                  if (!Number.isNaN(parsed)) setGame121Increment(parsed)
-                }}
-              />
-            </div>
-          </fieldset>
-
-          <fieldset className={styles.field}>
-            <legend className={styles.legend}>Darts allowed</legend>
-            <div className={styles.segment}>
-              {([6, 9, 12] as Game121DartsAllowed[]).map((darts) => (
                 <button
-                  key={darts}
                   type="button"
+                  tabIndex={isPractice ? -1 : undefined}
                   className={clsx(
                     styles.segmentBtn,
-                    game121DartsAllowed === darts && styles.segmentActive,
+                    mode === 'first-to' && styles.segmentActive,
                   )}
-                  onClick={() => setGame121DartsAllowed(darts)}
+                  onClick={() => setMode('first-to')}
                 >
-                  {darts}
+                  First to
                 </button>
-              ))}
-            </div>
-          </fieldset>
-        </>
-      ) : null}
+                <button
+                  type="button"
+                  tabIndex={isPractice ? -1 : undefined}
+                  className={clsx(
+                    styles.segmentBtn,
+                    mode === 'best-of' && styles.segmentActive,
+                  )}
+                  onClick={() => setMode('best-of')}
+                >
+                  Best of
+                </button>
+              </div>
+            </fieldset>
 
-      {playMode !== 'practice' && gameType === 'x01' ? (
-        <>
-          <fieldset className={clsx(styles.field, styles.formatField)}>
-            <legend className={styles.legend}>Match format</legend>
-            <div className={styles.segment}>
-              <input
-                type="number"
-                className={styles.legsInput}
-                aria-label="Legs"
-                min={1}
-                max={21}
-                value={legsTarget}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  if (raw === '') {
-                    setLegsTarget('')
-                    return
-                  }
-                  const parsed = Number(raw)
-                  if (!Number.isNaN(parsed)) setLegsTarget(parsed)
-                }}
-              />
-              <button
-                type="button"
-                className={clsx(
-                  styles.segmentBtn,
-                  mode === 'first-to' && styles.segmentActive,
-                )}
-                onClick={() => setMode('first-to')}
-              >
-                First to
-              </button>
-              <button
-                type="button"
-                className={clsx(
-                  styles.segmentBtn,
-                  mode === 'best-of' && styles.segmentActive,
-                )}
-                onClick={() => setMode('best-of')}
-              >
-                Best of
-              </button>
-            </div>
-          </fieldset>
+            <fieldset
+              className={clsx(
+                styles.field,
+                isPractice && styles.reservedHidden,
+              )}
+              inert={isPractice || undefined}
+              aria-hidden={isPractice}
+            >
+              <legend className={styles.legend}>First throw</legend>
+              <div className={styles.segment}>
+                <button
+                  type="button"
+                  tabIndex={isPractice ? -1 : undefined}
+                  className={clsx(
+                    styles.segmentBtn,
+                    firstThrower === 0 && styles.segmentActive,
+                  )}
+                  onClick={() => setFirstThrower(0)}
+                >
+                  {player1.trim() || 'Player 1'}
+                </button>
+                <button
+                  type="button"
+                  tabIndex={isPractice ? -1 : undefined}
+                  className={clsx(
+                    styles.segmentBtn,
+                    firstThrower === 1 && styles.segmentActive,
+                  )}
+                  onClick={() => setFirstThrower(1)}
+                >
+                  {opponentLabel}
+                </button>
+              </div>
+            </fieldset>
+          </div>
 
-          <fieldset className={styles.field}>
-            <legend className={styles.legend}>First throw</legend>
-            <div className={styles.segment}>
-              <button
-                type="button"
-                className={clsx(
-                  styles.segmentBtn,
-                  firstThrower === 0 && styles.segmentActive,
-                )}
-                onClick={() => setFirstThrower(0)}
-              >
-                {player1.trim() || 'Player 1'}
-              </button>
-              <button
-                type="button"
-                className={clsx(
-                  styles.segmentBtn,
-                  firstThrower === 1 && styles.segmentActive,
-                )}
-                onClick={() => setFirstThrower(1)}
-              >
-                {opponentLabel}
-              </button>
-            </div>
-          </fieldset>
-        </>
-      ) : null}
+          <div
+            className={clsx(
+              styles.optionsVariant,
+              is121 && styles.optionsActive,
+            )}
+            inert={is121 ? undefined : true}
+            aria-hidden={!is121}
+          >
+            <fieldset className={clsx(styles.field, styles.formatField)}>
+              <legend className={styles.legend}>Target increase</legend>
+              <div className={styles.segment}>
+                <input
+                  type="number"
+                  className={styles.legsInput}
+                  aria-label="121 target increase"
+                  min={1}
+                  max={49}
+                  value={game121Increment}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    if (raw === '') {
+                      setGame121Increment('')
+                      return
+                    }
+                    const parsed = Number(raw)
+                    if (!Number.isNaN(parsed)) setGame121Increment(parsed)
+                  }}
+                />
+              </div>
+            </fieldset>
 
-      <button type="submit" className={styles.submit}>
-        {gameType === '121'
+            <fieldset className={styles.field}>
+              <legend className={styles.legend}>Darts allowed</legend>
+              <div className={styles.segment}>
+                {([6, 9, 12] as Game121DartsAllowed[]).map((darts) => (
+                  <button
+                    key={darts}
+                    type="button"
+                    className={clsx(
+                      styles.segmentBtn,
+                      game121DartsAllowed === darts && styles.segmentActive,
+                    )}
+                    onClick={() => setGame121DartsAllowed(darts)}
+                  >
+                    {darts}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className={styles.submit}
+        tabIndex={isReady ? undefined : -1}
+      >
+        {is121
           ? 'Start 121'
-          : playMode === 'practice'
+          : isPractice
             ? 'Start practice'
             : 'Start match'}
       </button>

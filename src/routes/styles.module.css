@@ -1,16 +1,26 @@
 .page {
+  --page-padding: clamp(3rem, 6dvh, 6rem);
+
   display: flex;
   flex-direction: column;
   flex: 1;
   align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: clamp(1rem, 3dvh, 1.5rem) var(--grid-margin);
+  min-height: 0;
+  padding: var(--page-padding) var(--grid-margin) var(--page-padding);
 }
 
 .setupHeader {
+  flex-shrink: 0;
   width: min(100%, 34rem);
   padding-left: 0.25rem;
+}
+
+.setupStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: min(100%, 34rem);
+  margin-top: 1.5rem;
 }
 
 .eyebrow {

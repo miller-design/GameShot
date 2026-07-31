@@ -21,7 +21,9 @@ function Home() {
           Set up matchplay or solo practice.
         </p>
       </header>
-      <MatchSetupForm />
+      <div className={styles.setupStage}>
+        <MatchSetupForm />
+      </div>
     </main>
   )
 }
