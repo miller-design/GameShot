@@ -65,7 +65,7 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
   const winnerIndex: PlayerIndex = (matchWinner ?? legWinner) as PlayerIndex
   const winnerName =
     match.config.playerNames[winnerIndex] ||
-    (winnerIndex === 0 ? 'Player' : 'Computer')
+    (winnerIndex === 0 ? 'Player' : 'Player 2')
   const isMatchComplete = matchWinner !== null
   const playerStats = isMatchComplete
     ? ([computePlayerStats(match, 0), computePlayerStats(match, 1)] as const)

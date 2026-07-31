@@ -8,11 +8,8 @@ export type StartingScore = 501 | 701 | 1001
 /** How the match is decided. */
 export type MatchMode = 'first-to' | 'best-of'
 
-/** How the session is played: two humans, solo practice, or vs bot. */
-export type PlayMode = 'matchplay' | 'practice' | 'vs-computer'
-
-/** Bot strength for vs-computer matches. */
-export type BotDifficulty = 'easy' | 'medium' | 'hard'
+/** How the session is played: two humans or solo practice. */
+export type PlayMode = 'matchplay' | 'practice'
 
 /** Player index in a two-player match. */
 export type PlayerIndex = 0 | 1
@@ -27,8 +24,6 @@ export type MatchConfig = {
   legsTarget: number
   /** Who throws first in leg 1. */
   firstThrower: PlayerIndex
-  /** Required when playMode is vs-computer. */
-  botDifficulty?: BotDifficulty
 }
 
 /** A single visit (up to 3 darts) recorded during a leg. */

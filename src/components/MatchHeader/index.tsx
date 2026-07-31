@@ -23,10 +23,6 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
   const names = match.config.playerNames
   const [legs0, legs1] = match.legsWon
   const isPractice = match.config.playMode === 'practice'
-  const botLabel =
-    match.config.playMode === 'vs-computer' && match.config.botDifficulty
-      ? `Computer (${match.config.botDifficulty})`
-      : names[1]
 
   /**
    * Renders a player name with an optional turn asterisk.
@@ -82,7 +78,7 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
       <div className={styles.legs} aria-label="Leg score">
         {legs0} – {legs1}
       </div>
-      {renderName(1, 'right', botLabel)}
+      {renderName(1, 'right', names[1])}
     </header>
   )
 }

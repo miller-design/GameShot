@@ -5,7 +5,6 @@ import { useNavigate } from '@tanstack/react-router'
 
 import { useMatch } from '#/store/match'
 import type {
-  BotDifficulty,
   MatchConfig,
   MatchMode,
   PlayerIndex,
@@ -34,7 +33,6 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
   const [playMode, setPlayMode] = useState<PlayMode>('matchplay')
   const [player1, setPlayer1] = useState('Player 1')
   const [player2, setPlayer2] = useState('Player 2')
-  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium')
   const [startingScore, setStartingScore] = useState<StartingScore>(501)
   const [mode, setMode] = useState<MatchMode>('best-of')
   const [legsTarget, setLegsTarget] = useState<number | ''>(5)
@@ -64,16 +62,6 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
         legsTarget: 1,
         firstThrower: 0,
       }
-    } else if (playMode === 'vs-computer') {
-      config = {
-        playMode: 'vs-computer',
-        playerNames: [name1, 'Computer'],
-        startingScore,
-        mode,
-        legsTarget: legs,
-        firstThrower,
-        botDifficulty,
-      }
     } else {
       const name2 = player2.trim() || 'Player 2'
       config = {
@@ -90,8 +78,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
     void navigate({ to: '/match' })
   }
 
-  const opponentLabel =
-    playMode === 'vs-computer' ? 'Computer' : player2.trim() || 'Player 2'
+  const opponentLabel = player2.trim() || 'Player 2'
 
   return (
     <form className={clsx(styles.root, className)} onSubmit={handleSubmit}>
@@ -102,7 +89,6 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
             [
               ['matchplay', 'Matchplay'],
               ['practice', 'Practice'],
-              ['vs-computer', 'Vs Computer'],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -126,9 +112,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
         </legend>
         <div className={styles.row}>
           <label className={clsx(styles.label, styles.playerLabel)}>
-            {playMode === 'vs-computer' || playMode === 'practice'
-              ? 'You'
-              : 'Player 1'}
+            {playMode === 'practice' ? 'You' : 'Player 1'}
             <input
               type="text"
               value={player1}
@@ -148,26 +132,6 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
                 autoComplete="off"
               />
             </label>
-          ) : playMode === 'vs-computer' ? (
-            <div className={clsx(styles.label, styles.playerLabel)}>
-              <label htmlFor="bot-difficulty">Computer level</label>
-              <select
-                id="bot-difficulty"
-                value={botDifficulty}
-                onPointerDown={(e) => {
-                  if (typeof e.currentTarget.showPicker !== 'function') return
-                  e.preventDefault()
-                  e.currentTarget.showPicker()
-                }}
-                onChange={(e) =>
-                  setBotDifficulty(e.target.value as BotDifficulty)
-                }
-              >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
           ) : null}
         </div>
       </fieldset>
@@ -247,8 +211,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
                 )}
                 onClick={() => setFirstThrower(0)}
               >
-                {player1.trim() ||
-                  (playMode === 'vs-computer' ? 'You' : 'Player 1')}
+                {player1.trim() || 'Player 1'}
               </button>
               <button
                 type="button"

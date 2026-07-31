@@ -185,12 +185,11 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     expect(state.matchWinner).toBe(null)
   })
 
-  it('starts the computer on leg 2 when the human started and lost leg 1', () => {
+  it('starts player 2 on leg 2 when player 1 started and lost leg 1', () => {
     let state = createMatch({
       ...baseConfig,
-      playMode: 'vs-computer',
-      playerNames: ['You', 'Computer'],
-      botDifficulty: 'medium',
+      playMode: 'matchplay',
+      playerNames: ['Player 1', 'Player 2'],
     })
     state = {
       ...state,

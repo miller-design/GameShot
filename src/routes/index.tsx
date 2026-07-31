@@ -18,7 +18,7 @@ function Home() {
         <div className={styles.eyebrow}>New match</div>
         <h1 className={styles.title}>GameShot</h1>
         <p className={styles.lede}>
-          Set up matchplay, solo practice, or a game against the computer.
+          Set up matchplay or solo practice.
         </p>
       </header>
       <MatchSetupForm />

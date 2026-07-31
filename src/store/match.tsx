@@ -38,7 +38,6 @@ const MatchContext = createContext<MatchContextValue | null>(null)
 const VALID_PLAY_MODES: ReadonlySet<PlayMode> = new Set([
   'matchplay',
   'practice',
-  'vs-computer',
 ])
 
 /**
