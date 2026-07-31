@@ -6,8 +6,23 @@
   background: var(--color-surface);
   text-align: center;
 
+  &.panelGameShot {
+    border-color: color-mix(
+      in srgb,
+      var(--color-accent) 55%,
+      var(--color-border)
+    );
+    background:
+      radial-gradient(
+        ellipse 120% 80% at 50% -20%,
+        color-mix(in srgb, var(--color-accent) 14%, transparent),
+        transparent 55%
+      ),
+      var(--color-surface);
+  }
+
   & .eyebrow {
-    margin: 0 0 0.5rem;
+    margin-bottom: 1rem;
     font-size: var(--fs-xs);
     font-weight: var(--fw-semibold);
     letter-spacing: 0.12em;
@@ -112,111 +127,179 @@
     font-size: var(--fs-sm);
   }
 
-  & .gameShotCard {
-    margin: 1rem auto 0;
-    padding: 0.85rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    background: var(--color-bg);
-    text-align: left;
-  }
-
-  & .gameShotName {
-    margin: 0 0 0.75rem;
-    font-size: var(--fs-sm);
-    font-weight: var(--fw-semibold);
-    color: var(--color-accent);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  & .gameShotList {
-    margin: 0;
+  & .gameShotHeader {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    align-items: center;
 
-    & > div {
+    & .title {
       display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    & dt {
-      color: var(--color-text-muted);
-      font-size: var(--fs-sm);
-    }
-
-    & dd {
-      margin: 0;
-      font-family: var(--font-mono);
-      font-variant-numeric: tabular-nums;
-      font-weight: var(--fw-semibold);
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem 0.5rem;
+      font-size: var(--fs-md);
+      line-height: 1.2;
     }
   }
 
-  & .dartGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
+  & .eyebrowInline {
+    font-size: inherit;
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-accent);
   }
 
-  & .dartBtn {
-    min-height: 2.25rem;
-    border-radius: 0.375rem;
-    border: 1px solid var(--color-border);
-    background: transparent;
-    color: var(--color-text);
+  & .eyebrowSep {
+    margin-inline: 0.35em;
+    font-weight: var(--fw-medium);
+    opacity: 0.55;
+  }
+
+  & .eyebrowScore {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+  }
 
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+  & .titleDivider {
+    font-size: inherit;
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+  }
+
+  & .titleName {
+    font-family: var(--font-display);
+    font-size: inherit;
+    font-weight: var(--fw-bold);
+  }
+
+  & .checkoutSection {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  & .dartFieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+    min-width: 0;
+    display: flex;
+    width: 100%;
+  }
+
+  & .dartLegend {
+    width: 100%;
+    margin: 0 0 0.65rem;
+    padding: 0;
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  & .dartSegment {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--color-bg);
+  }
+
+  & .dartOption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    min-height: 3.75rem;
+    padding: 0.65rem 0.35rem;
+    border: none;
+    border-inline-end: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text);
+    touch-action: manipulation;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+
+    &:last-child {
+      border-inline-end: none;
+    }
+
+    &:hover:not(:disabled):not(.dartOptionSelected) {
+      background: var(--color-surface-raised);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus-ring);
+      outline-offset: -2px;
+      z-index: 1;
     }
   }
 
-  & .dartBtnSelected {
-    border-color: var(--color-accent);
+  & .dartOptionSelected {
     background: var(--color-accent);
     color: var(--color-accent-ink);
   }
 
-  & .hint {
-    margin: 0.65rem 0 0;
-    color: var(--color-text-muted);
-    font-size: var(--fs-xs);
-    text-align: center;
+  & .dartOptionDisabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+  }
+
+  & .dartOptionCount {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
   }
 
   & .actions {
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-wrap: nowrap;
+    gap: 1.55rem;
     margin-top: 1.25rem;
+  }
+
+  & .actionsCheckout {
+    margin-top: 1.35rem;
   }
 
   & .primary,
   & .secondary {
-    min-height: 2.75rem;
+    min-height: 4rem;
     border-radius: 0.375rem;
     flex: 1 1 0;
     font-weight: var(--fw-bold);
     font-size: var(--fs-md);
+    touch-action: manipulation;
   }
 
   & .primary {
     border: none;
     background: var(--color-accent);
     color: var(--color-accent-ink);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.06);
+    }
   }
 
   & .secondary {
     border: 1px solid var(--color-border);
-    background: transparent;
+    background: var(--color-surface-raised);
     color: var(--color-text);
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-text-muted);
+    }
   }
 }

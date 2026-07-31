@@ -57,9 +57,7 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
   const needed = legsToWin(match.config)
   const isPractice = match.config.playMode === 'practice'
   const decidingLeg =
-    !isPractice &&
-    legWinner !== null &&
-    match.legsWon[legWinner] + 1 >= needed
+    !isPractice && legWinner !== null && match.legsWon[legWinner] + 1 >= needed
   const isPendingCheckout = matchWinner === null && legWinner !== null
 
   const winnerIndex: PlayerIndex = (matchWinner ?? legWinner) as PlayerIndex
@@ -75,12 +73,11 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
     (v) => v.player === winnerIndex && v.checkout,
   )
   const checkoutTotal = checkoutVisit?.scored ?? null
-  const minDarts = checkoutTotal === null ? 3 : minDartsForCheckout(checkoutTotal)
+  const minDarts =
+    checkoutTotal === null ? 3 : minDartsForCheckout(checkoutTotal)
   const selectedCheckoutDartsUsed =
     checkoutVisit?.dartsUsed ??
-    (isPendingCheckout
-      ? match.pendingLegCheckoutDartsUsed ?? minDarts
-      : 3)
+    (isPendingCheckout ? (match.pendingLegCheckoutDartsUsed ?? minDarts) : 3)
 
   /**
    * Confirms the pending checkout and advances the match.
@@ -127,16 +124,32 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
     <SlidePanel
       open={open}
       ariaLabel={matchWinner !== null ? 'Match complete' : 'Leg complete'}
-      className={clsx(styles.panel, className)}
+      className={clsx(
+        styles.panel,
+        isPendingCheckout && styles.panelGameShot,
+        className,
+      )}
       zIndex={50}
     >
       {isMatchComplete ? (
         <>
-          <p className={styles.eyebrow}>Match won</p>
-          <h2 className={styles.title}>{winnerName}</h2>
-          <p className={styles.meta}>
-            {match.legsWon[0]}–{match.legsWon[1]} legs
-          </p>
+          <header className={styles.gameShotHeader}>
+            <h2 className={styles.title}>
+              <span className={styles.eyebrowInline}>
+                Match won
+                <span className={styles.eyebrowSep} aria-hidden="true">
+                  ·
+                </span>
+                <span className={styles.eyebrowScore}>
+                  {match.legsWon[0]}–{match.legsWon[1]}
+                </span>
+              </span>
+              <span className={styles.titleDivider} aria-hidden="true">
+                —
+              </span>
+              <span className={styles.titleName}>{winnerName}</span>
+            </h2>
+          </header>
 
           <div className={styles.statsGrid}>
             {([0, 1] as const).map((player) => {
@@ -180,59 +193,79 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
           </div>
         </>
       ) : (
-        <>
-          <p className={styles.eyebrow}>Game shot</p>
+        <header className={styles.gameShotHeader}>
           <h2 className={styles.title}>
-            {isPractice ? 'Leg complete' : winnerName}
+            <span className={styles.eyebrowInline}>
+              Game shot
+              {!isPractice && decidingLeg ? (
+                <>
+                  <span className={styles.eyebrowSep} aria-hidden="true">
+                    ·
+                  </span>
+                  Match point
+                </>
+              ) : null}
+            </span>
+            <span className={styles.titleDivider} aria-hidden="true">
+              —
+            </span>
+            <span className={styles.titleName}>
+              {isPractice ? 'Leg complete' : winnerName}
+            </span>
           </h2>
-          {isPractice ? (
-            <p className={styles.meta}>
-              Legs completed: {match.legsWon[0]} — confirm checkout
-            </p>
-          ) : decidingLeg ? (
-            <p className={styles.meta}>Match point — confirm checkout</p>
-          ) : (
-            <p className={styles.meta}>Leg won — confirm checkout</p>
-          )}
-        </>
+        </header>
       )}
 
       {isPendingCheckout && (
-        <div
-          className={styles.gameShotCard}
+        <section
+          className={styles.checkoutSection}
           aria-label="Game shot confirmation"
         >
-          <p className={styles.gameShotName}>Darts used</p>
-          <div
-            className={styles.dartGrid}
-            role="radiogroup"
-            aria-label="Darts used on checkout"
-          >
-            {([1, 2, 3] as const).map((d) => {
-              const disabled = d < minDarts
-              const selected = d === selectedCheckoutDartsUsed
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  className={clsx(styles.dartBtn, selected && styles.dartBtnSelected)}
-                  disabled={disabled}
-                  aria-pressed={selected}
-                  onClick={() => {
-                    if (disabled) return
-                    setPendingLegCheckoutDartsUsed(d)
-                  }}
-                >
-                  {d}
-                </button>
-              )
-            })}
-          </div>
-          <p className={styles.hint}>Invalid options are disabled.</p>
-        </div>
+          <fieldset className={styles.dartFieldset}>
+            <legend className={styles.dartLegend}>
+              How many darts to finish?
+            </legend>
+            <div
+              className={styles.dartSegment}
+              role="radiogroup"
+              aria-label="Darts used on checkout"
+            >
+              {([1, 2, 3] as const).map((d) => {
+                const disabled = d < minDarts
+                const selected = d === selectedCheckoutDartsUsed
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    role="radio"
+                    className={clsx(
+                      styles.dartOption,
+                      selected && styles.dartOptionSelected,
+                      disabled && styles.dartOptionDisabled,
+                    )}
+                    disabled={disabled}
+                    aria-checked={selected}
+                    aria-label={`${d} dart${d === 1 ? '' : 's'}`}
+                    onClick={() => {
+                      if (disabled) return
+                      setPendingLegCheckoutDartsUsed(d)
+                    }}
+                  >
+                    <span className={styles.dartOptionCount}>{d}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
+        </section>
       )}
 
-      <div className={styles.actions}>
+      <div
+        className={clsx(
+          styles.actions,
+          isPendingCheckout && styles.actionsCheckout,
+        )}
+      >
         {matchWinner !== null ? (
           <>
             <button
@@ -258,9 +291,7 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
               onClick={handleConfirmCheckout}
               disabled={!isPendingCheckout}
             >
-              {isPractice
-                ? `Confirm game shot (${selectedCheckoutDartsUsed} darts)`
-                : `Confirm game shot (${selectedCheckoutDartsUsed} darts)${decidingLeg ? ' (match)' : ''}`}
+              Confirm
             </button>
             <button
               type="button"
@@ -268,7 +299,7 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
               onClick={handleCancelCheckout}
               disabled={!isPendingCheckout}
             >
-              Cancel — wrong score
+              Cancel
             </button>
           </>
         )}
