@@ -183,6 +183,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
    */
   const startMatch = useCallback((config: MatchConfig) => {
     const next = createMatch(config)
+    // Persist immediately so a fast /match navigation cannot read a stale
+    // empty session before the React effect runs.
+    persistMatch(next)
     setMatch(next)
   }, [])
 

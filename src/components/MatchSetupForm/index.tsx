@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from '@tanstack/react-router'
 
 import { useMatch } from '#/store/match'
@@ -50,9 +51,35 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
   const optionsStackRef = useRef<HTMLDivElement>(null)
 
   /**
+   * Reads a stacked options variant's content height. WebKit can report 0
+   * for `visibility: hidden` nodes after a toggle, so inactive variants are
+   * briefly forced into layout for the read.
+   *
+   * @param variant - One `.optionsVariant` element in the stack
+   *
+   * @example
+   * measureVariantHeight(optionsStack.children[0])
+   */
+  function measureVariantHeight(variant: HTMLElement) {
+    const wasActive = variant.classList.contains(styles.optionsActive)
+    if (wasActive) return variant.offsetHeight
+
+    const previousVisibility = variant.style.visibility
+    const previousOpacity = variant.style.opacity
+    // Keep it non-visible to the user, but participating in layout.
+    variant.style.visibility = 'visible'
+    variant.style.opacity = '0'
+    const height = variant.offsetHeight
+    variant.style.visibility = previousVisibility
+    variant.style.opacity = previousOpacity
+    return height
+  }
+
+  /**
    * Measures the tallest panel layout and writes `--setup-panel-height`
    * so the modal stays that size across game options. Re-runs on resize
-   * and orientation change.
+   * and orientation change — not on game-type toggles (those remasures
+   * were collapsing the lock on iOS Safari).
    *
    * @example
    * measurePanelHeight()
@@ -63,6 +90,10 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
     const optionsStack = optionsStackRef.current
     if (!panel || !gameField || !optionsStack) return
 
+    // Measure against intrinsic height so a prior lock cannot clip/stretch reads.
+    const previousLock = panel.style.getPropertyValue('--setup-panel-height')
+    panel.style.setProperty('--setup-panel-height', 'auto')
+
     const computed = getComputedStyle(panel)
     const paddingY =
       Number.parseFloat(computed.paddingTop) +
@@ -72,30 +103,35 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
     let tallestVariant = 0
     for (const variant of optionsStack.children) {
       if (variant instanceof HTMLElement) {
-        tallestVariant = Math.max(tallestVariant, variant.scrollHeight)
+        tallestVariant = Math.max(tallestVariant, measureVariantHeight(variant))
       }
     }
 
     const nextHeight = Math.ceil(
       gameField.offsetHeight + gap + tallestVariant + paddingY,
     )
+
+    if (previousLock) {
+      panel.style.setProperty('--setup-panel-height', previousLock)
+    } else {
+      panel.style.removeProperty('--setup-panel-height')
+    }
+
     setPanelHeight((current) => (current === nextHeight ? current : nextHeight))
   }
 
   useLayoutEffect(() => {
-    const panel = panelRef.current
     const gameField = gameFieldRef.current
     const optionsStack = optionsStackRef.current
-    if (!panel || !gameField || !optionsStack) return
+    if (!gameField || !optionsStack) return
 
     measurePanelHeight()
 
+    // Only watch the game field for typography/control size changes.
+    // Observing the stacked variants re-fired on visibility toggles and
+    // let Safari rewrite the lock to the shorter (121) height.
     const observer = new ResizeObserver(measurePanelHeight)
     observer.observe(gameField)
-    observer.observe(optionsStack)
-    for (const variant of optionsStack.children) {
-      if (variant instanceof Element) observer.observe(variant)
-    }
 
     window.addEventListener('resize', measurePanelHeight)
     window.addEventListener('orientationchange', measurePanelHeight)
@@ -166,7 +202,11 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
       }
     }
 
-    startMatch(config)
+    // Commit match state before navigating — otherwise /match can briefly
+    // see `match === null`, redirect home, and remount this form at defaults.
+    flushSync(() => {
+      startMatch(config)
+    })
     void navigate({ to: '/match' })
   }
 

@@ -17,9 +17,14 @@ function MatchPage() {
 
   useEffect(() => {
     if (!hydrated) return
-    if (match === null) {
+    if (match !== null) return
+
+    // Defer the redirect one frame so a startMatch + navigate race cannot
+    // bounce back to `/` and remount the setup form mid-transition.
+    const frame = window.requestAnimationFrame(() => {
       void navigate({ to: '/' })
-    }
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [match, hydrated, navigate])
 
   if (!hydrated || match === null) {
