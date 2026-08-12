@@ -98,8 +98,7 @@ const ScorePad = ({
   const appendDigit = useCallback(
     (digit: string) => {
       if (disabled) return
-      const shouldReplace =
-        isEdit && prefillScore !== null && replaceNextDigit
+      const shouldReplace = isEdit && prefillScore !== null && replaceNextDigit
       setReplaceNextDigit(false)
       setBuffer((prev) => {
         const next =
@@ -200,24 +199,14 @@ const ScorePad = ({
 
   return (
     <div className={clsx(styles.root, className)} aria-label="Score pad">
-      <div className={styles.displayWrap}>
-        <div className={styles.display} aria-live="polite">
-          {buffer === '' ? (
-            <span className={styles.placeholder}>
-              {isEdit ? 'Edit score' : 'Enter score'}
-            </span>
-          ) : (
-            buffer
-          )}
+      {isEdit && errorMessage !== null ? (
+        <div className={styles.toast} role="alert" aria-live="assertive">
+          <span className={styles.toastIcon} aria-hidden="true">
+            !
+          </span>
+          <span>{errorMessage}</span>
         </div>
-
-        {isEdit && errorMessage !== null ? (
-          <div className={styles.toast} role="alert" aria-live="assertive">
-            <span className={styles.toastIcon} aria-hidden="true">!</span>
-            <span>{errorMessage}</span>
-          </div>
-        ) : null}
-      </div>
+      ) : null}
 
       <div className={styles.grid}>
         {keys.map((key) => (
@@ -235,10 +224,10 @@ const ScorePad = ({
           type="button"
           className={styles.key}
           disabled={disabled}
-          onClick={clear}
-          aria-label="Clear"
+          onClick={backspace}
+          aria-label="Backspace"
         >
-          C
+          <BackspaceIcon />
         </button>
         <button
           type="button"
@@ -250,23 +239,15 @@ const ScorePad = ({
         </button>
         <button
           type="button"
-          className={styles.key}
-          disabled={disabled}
-          onClick={backspace}
-          aria-label="Backspace"
+          className={clsx(styles.key, styles.submit)}
+          disabled={
+            disabled || buffer === '' || (isEdit && errorMessage !== null)
+          }
+          onClick={submit}
         >
-          <BackspaceIcon />
+          {isEdit ? 'Update' : 'Submit'}
         </button>
       </div>
-
-      <button
-        type="button"
-        className={styles.submit}
-        disabled={disabled || buffer === '' || (isEdit && errorMessage !== null)}
-        onClick={submit}
-      >
-        {isEdit ? 'Update' : 'Submit'}
-      </button>
     </div>
   )
 }

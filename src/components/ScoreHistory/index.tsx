@@ -12,13 +12,8 @@ import type { MatchState } from '#/types/match'
 
 import styles from './styles.module.css'
 
-/** Throw rows on roomy viewports; empty rows pad the grid. */
-const VISIBLE_THROW_ROWS_DEFAULT = 5
-/** Fewer rows on narrow portrait so the score pad keeps usable digit keys. */
-const VISIBLE_THROW_ROWS_COMPACT = 3
-/** Narrow portrait phones — matches --bp-sm floor. */
-const COMPACT_HISTORY_MQ =
-  '(max-width: 639px) and (orientation: portrait)'
+/** Throw rows kept in view; empty rows pad the grid. */
+const VISIBLE_THROW_ROWS = 4
 
 type ScoreHistoryProps = {
   match: MatchState
@@ -27,47 +22,6 @@ type ScoreHistoryProps = {
   onEditVisit: (visitIndex: number) => void
   onCancelEdit?: () => void
   inputBuffer?: string
-}
-
-/**
- * Returns how many throw rows to show based on viewport compactness.
- *
- * @returns 3 on narrow portrait, otherwise 5
- *
- * @example
- * const visibleRows = useVisibleThrowRows() // 3 | 5
- */
-function useVisibleThrowRows(): number {
-  const [visibleRows, setVisibleRows] = useState(() => {
-    if (typeof window === 'undefined') return VISIBLE_THROW_ROWS_DEFAULT
-    return window.matchMedia(COMPACT_HISTORY_MQ).matches
-      ? VISIBLE_THROW_ROWS_COMPACT
-      : VISIBLE_THROW_ROWS_DEFAULT
-  })
-
-  useEffect(() => {
-    const media = window.matchMedia(COMPACT_HISTORY_MQ)
-
-    /**
-     * Syncs visible row count when width or orientation changes.
-     *
-     * @example
-     * syncVisibleRows()
-     */
-    function syncVisibleRows() {
-      setVisibleRows(
-        media.matches
-          ? VISIBLE_THROW_ROWS_COMPACT
-          : VISIBLE_THROW_ROWS_DEFAULT,
-      )
-    }
-
-    syncVisibleRows()
-    media.addEventListener('change', syncVisibleRows)
-    return () => media.removeEventListener('change', syncVisibleRows)
-  }, [])
-
-  return visibleRows
 }
 
 type InputPreview = {
@@ -121,8 +75,8 @@ function previewEditInput(
 
 /**
  * Target-style scored / to-go history grid with dart-count spine.
- * Visible throw rows adapt (3 on narrow portrait, 5 otherwise) and share
- * a measured row height so the score zone stays visually stable.
+ * Three visible throw rows share a measured row height so the score zone stays
+ * visually stable.
  *
  * @param props.match - Full match state
  * @param props.className - Optional class on the table wrapper
@@ -140,7 +94,7 @@ const ScoreHistory = ({
 }: ScoreHistoryProps) => {
   const { currentLeg } = match
   const isPractice = match.config.playMode === 'practice'
-  const visibleThrowRows = useVisibleThrowRows()
+  const visibleThrowRows = VISIBLE_THROW_ROWS
   const rows = buildHistoryRows(currentLeg)
   const nextRow = nextInputRowIndex(currentLeg)
   const thrower = currentLeg.currentPlayer
