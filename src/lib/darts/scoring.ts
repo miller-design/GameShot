@@ -32,6 +32,16 @@ export function legsToWin(
   return Math.ceil(config.legsTarget / 2)
 }
 
+function normalizeSeriesTarget(
+  target: number,
+  mode: MatchConfig['mode'],
+): number {
+  const normalized = Math.max(1, Math.min(21, Math.floor(Number(target) || 1)))
+  return mode === 'best-of' && normalized % 2 === 0
+    ? normalized + 1
+    : normalized
+}
+
 /**
  * Creates a fresh leg with both players at the starting score.
  *
@@ -101,12 +111,19 @@ export function createMatch(config: MatchConfig): MatchState {
           startingScore: 121,
           mode: 'first-to',
           legsTarget: 1,
+          setsMode: 'first-to',
+          setsTarget: 1,
           firstThrower: 0,
         }
-      : config
+      : {
+          ...config,
+          legsTarget: normalizeSeriesTarget(config.legsTarget, config.mode),
+          setsTarget: normalizeSeriesTarget(config.setsTarget, config.setsMode),
+        }
   const game121 = matchConfig.gameType === '121' ? create121State() : null
   return {
     config: matchConfig,
+    setsWon: [0, 0],
     legsWon: [0, 0],
     game121,
     currentLeg:
@@ -477,9 +494,31 @@ export function confirmLeg(state: MatchState): MatchState {
   }
 
   const needed = legsToWin(state.config)
-  if (legsWon[winner] >= needed) {
+  if (legsWon[winner] < needed) {
+    const nextFirstThrower: PlayerIndex =
+      state.currentLeg.firstThrower === 0 ? 1 : 0
+
     return {
       ...state,
+      legsWon,
+      completedLegs: [...state.completedLegs, finishedLeg],
+      currentLeg: createLeg(state.config.startingScore, nextFirstThrower),
+      pendingLegWinner: null,
+      pendingLegCheckoutDartsUsed: null,
+      lastBust: false,
+    }
+  }
+
+  const setsWon: [number, number] = [...state.setsWon]
+  setsWon[winner] += 1
+  const setsNeeded = legsToWin({
+    mode: state.config.setsMode,
+    legsTarget: state.config.setsTarget,
+  })
+  if (setsWon[winner] >= setsNeeded) {
+    return {
+      ...state,
+      setsWon,
       legsWon,
       currentLeg: finishedLeg,
       completedLegs: [...state.completedLegs, finishedLeg],
@@ -495,7 +534,8 @@ export function confirmLeg(state: MatchState): MatchState {
 
   return {
     ...state,
-    legsWon,
+    setsWon,
+    legsWon: [0, 0],
     completedLegs: [...state.completedLegs, finishedLeg],
     currentLeg: createLeg(state.config.startingScore, nextFirstThrower),
     pendingLegWinner: null,

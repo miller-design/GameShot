@@ -1,7 +1,7 @@
 .root {
   --setup-control-height: 2.625rem;
   --setup-panel-gap: 1rem;
-  --setup-fade-duration: 0.35s;
+  --setup-fade-duration: 0.4s;
 
   position: absolute;
   top: 50%;
@@ -53,7 +53,7 @@
   overflow-y: auto;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--setup-fade-duration) ease;
+  transition: opacity var(--setup-fade-duration) 500ms ease;
   -webkit-overflow-scrolling: touch;
 
   @media (--bp-sm) {
@@ -172,9 +172,23 @@
   }
 
   & .formatField {
+    gap: 0.75rem;
+
     & .segment {
       flex-wrap: nowrap;
     }
+  }
+
+  & .formatLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding-left: 0.25rem;
+    color: var(--color-text-muted);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   & .legsInput {
@@ -251,7 +265,7 @@
   opacity: 0;
   pointer-events: none;
   transition:
-    opacity var(--setup-fade-duration) ease,
+    opacity var(--setup-fade-duration) 0.5s ease,
     filter 0.15s ease;
 
   @media (--bp-sm) {

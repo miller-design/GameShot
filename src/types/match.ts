@@ -29,6 +29,10 @@ export type MatchConfig = {
   mode: MatchMode
   /** First-to: legs needed to win. Best-of: total legs in the series. */
   legsTarget: number
+  /** How the overall match is decided by sets. */
+  setsMode: MatchMode
+  /** First-to: sets needed to win. Best-of: total sets in the series. */
+  setsTarget: number
   /** Who throws first in leg 1. */
   firstThrower: PlayerIndex
   /** 121 only: target increase after a successful checkout. */
@@ -71,6 +75,9 @@ export type LegState = {
 /** Full match state used by the store and UI. */
 export type MatchState = {
   config: MatchConfig
+  /** Sets won by each player. Practice always keeps this at 0–0. */
+  setsWon: [number, number]
+  /** Legs won in the current set. */
   legsWon: [number, number]
   game121: Game121State | null
   currentLeg: LegState

@@ -1,13 +1,18 @@
 .page {
   --page-padding: clamp(1rem, 3.5dvh, 6rem);
-  --page-padding-top: clamp(1.75rem, 7dvh, 8rem);
+  --page-padding-top: clamp(1rem, 3.5dvh, 6rem);
 
   display: flex;
   flex-direction: column;
+  justify-content: center;
   flex: 1;
   align-items: center;
   min-height: 0;
   padding: var(--page-padding-top) var(--grid-margin) var(--page-padding);
+
+  @media (--bp-lg) {
+    --page-padding-top: clamp(1.225rem, 4.9dvh, 5.6rem);
+  }
 }
 
 .setupHeader {
@@ -20,12 +25,7 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  width: min(100%, 34rem);
-  margin-top: 0.75rem;
-
-  @media (--bp-sm) {
-    margin-top: 1.5rem;
-  }
+  width: min(100%, 40rem);
 }
 
 .eyebrow {
@@ -34,31 +34,17 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-accent);
-}
-
-.title {
-  /* SiteHeader already brands the page on mobile. */
-  display: none;
-  margin: 0.55rem 0 0;
-  font-family: var(--font-mono);
-  font-size: clamp(var(--fs-xl), 6vw, 2.75rem);
-  font-weight: var(--fw-extrabold);
-  line-height: var(--lh-tight);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-
-  @media (--bp-sm) {
-    display: block;
-  }
+  text-align: center;
 }
 
 .lede {
-  margin: 0.35rem 0 0;
+  margin: 0.35rem 0 0.5rem;
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
   line-height: var(--lh-normal);
+  text-align: center;
 
   @media (--bp-sm) {
-    margin: 0.65rem 0 0;
+    margin: 0.65rem 0 0.5rem;
   }
 }

@@ -15,11 +15,8 @@ function Home() {
   return (
     <main className={styles.page}>
       <header className={styles.setupHeader}>
-        <div className={styles.eyebrow}>New match</div>
-        <h1 className={styles.title}>GameShot</h1>
-        <p className={styles.lede}>
-          Set up matchplay or solo practice.
-        </p>
+        <p className={styles.eyebrow}>New match</p>
+        <p className={styles.lede}>Set up matchplay or solo practice.</p>
       </header>
       <div className={styles.setupStage}>
         <MatchSetupForm />

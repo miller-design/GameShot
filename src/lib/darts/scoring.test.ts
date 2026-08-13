@@ -23,6 +23,8 @@ const baseConfig: MatchConfig = {
   startingScore: 501,
   mode: 'first-to',
   legsTarget: 2,
+  setsMode: 'first-to',
+  setsTarget: 1,
   firstThrower: 0,
   game121Increment: 1,
   game121DartsAllowed: 9,
@@ -252,6 +254,41 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     }
     expect(state.matchWinner).toBe(0)
     expect(state.legsWon[0]).toBe(2)
+  })
+
+  it('awards a set, resets its leg score, and alternates the next thrower', () => {
+    let state = createMatch({
+      ...baseConfig,
+      legsTarget: 1,
+      setsTarget: 2,
+    })
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [40, 501],
+      },
+    }
+
+    state = confirmLeg(submitVisit(state, 40))
+
+    expect(state.setsWon).toEqual([1, 0])
+    expect(state.legsWon).toEqual([0, 0])
+    expect(state.matchWinner).toBeNull()
+    expect(state.currentLeg.firstThrower).toBe(1)
+  })
+
+  it('normalizes best-of formats to odd numbers', () => {
+    const state = createMatch({
+      ...baseConfig,
+      mode: 'best-of',
+      legsTarget: 4,
+      setsMode: 'best-of',
+      setsTarget: 2,
+    })
+
+    expect(state.config.legsTarget).toBe(5)
+    expect(state.config.setsTarget).toBe(3)
   })
 
   it('undoes the last visit', () => {
@@ -502,6 +539,8 @@ describe('practice mode', () => {
     startingScore: 501,
     mode: 'first-to',
     legsTarget: 1,
+    setsMode: 'first-to',
+    setsTarget: 1,
     firstThrower: 0,
     game121Increment: 1,
     game121DartsAllowed: 9,
@@ -529,6 +568,7 @@ describe('practice mode', () => {
     expect(state.pendingLegWinner).toBe(0)
     state = confirmLeg(state)
     expect(state.matchWinner).toBeNull()
+    expect(state.setsWon).toEqual([0, 0])
     expect(state.legsWon[0]).toBe(1)
     expect(state.pendingLegWinner).toBeNull()
     expect(state.currentLeg.remaining[0]).toBe(501)
@@ -557,6 +597,8 @@ describe('121 game', () => {
     startingScore: 121,
     mode: 'first-to',
     legsTarget: 1,
+    setsMode: 'first-to',
+    setsTarget: 1,
     firstThrower: 0,
     game121Increment: 1,
     game121DartsAllowed: 9,

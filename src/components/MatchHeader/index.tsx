@@ -22,6 +22,7 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
   const thrower = match.currentLeg.currentPlayer
   const names = match.config.playerNames
   const [legs0, legs1] = match.legsWon
+  const [sets0, sets1] = match.setsWon
   const isPractice = match.config.playMode === 'practice'
   const is121 = match.config.gameType === '121' && match.game121 !== null
 
@@ -84,8 +85,8 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
   return (
     <header className={clsx(styles.root, className)}>
       {renderName(0, 'left', names[0])}
-      <div className={styles.legs} aria-label="Leg score">
-        {legs0} – {legs1}
+      <div className={styles.legs} aria-label="Set and leg score">
+        Sets {sets0}–{sets1} · Legs {legs0}–{legs1}
       </div>
       {renderName(1, 'right', names[1])}
     </header>

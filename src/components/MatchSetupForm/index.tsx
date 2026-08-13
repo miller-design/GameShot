@@ -42,7 +42,9 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
   const [game121DartsAllowed, setGame121DartsAllowed] =
     useState<Game121DartsAllowed>(9)
   const [mode, setMode] = useState<MatchMode>('best-of')
-  const [legsTarget, setLegsTarget] = useState<number | ''>(5)
+  const [legsTarget, setLegsTarget] = useState<number | ''>(3)
+  const [setsMode, setSetsMode] = useState<MatchMode>('first-to')
+  const [setsTarget, setSetsTarget] = useState<number | ''>(1)
   const [firstThrower, setFirstThrower] = useState<PlayerIndex>(0)
   const [panelHeight, setPanelHeight] = useState<number | null>(null)
 
@@ -155,7 +157,12 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
     event.preventDefault()
     const is121 = gameType === '121'
     const name1 = is121 ? '121' : player1.trim() || 'Player 1'
-    const legs = Math.max(1, Math.min(21, Math.floor(Number(legsTarget) || 1)))
+    const normalizeTarget = (target: number | '', targetMode: MatchMode) => {
+      const value = Math.max(1, Math.min(21, Math.floor(Number(target) || 1)))
+      return targetMode === 'best-of' && value % 2 === 0 ? value + 1 : value
+    }
+    const legs = normalizeTarget(legsTarget, mode)
+    const sets = normalizeTarget(setsTarget, setsMode)
     const increment = Math.max(
       1,
       Math.min(49, Math.floor(Number(game121Increment) || 1)),
@@ -171,6 +178,8 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
         startingScore: 121,
         mode: 'first-to',
         legsTarget: 1,
+        setsMode: 'first-to',
+        setsTarget: 1,
         firstThrower: 0,
         game121Increment: increment,
         game121DartsAllowed,
@@ -183,6 +192,8 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
         startingScore,
         mode: 'first-to',
         legsTarget: 1,
+        setsMode: 'first-to',
+        setsTarget: 1,
         firstThrower: 0,
         game121Increment: increment,
         game121DartsAllowed,
@@ -196,6 +207,8 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
         startingScore,
         mode,
         legsTarget: legs,
+        setsMode,
+        setsTarget: sets,
         firstThrower,
         game121Increment: increment,
         game121DartsAllowed,
@@ -361,48 +374,112 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
               aria-hidden={isPractice}
             >
               <legend className={styles.legend}>Match format</legend>
-              <div className={styles.segment}>
-                <input
-                  type="number"
-                  className={styles.legsInput}
-                  aria-label="Legs"
-                  min={1}
-                  max={21}
-                  value={legsTarget}
-                  tabIndex={isPractice ? -1 : undefined}
-                  onChange={(e) => {
-                    const raw = e.target.value
-                    if (raw === '') {
-                      setLegsTarget('')
-                      return
-                    }
-                    const parsed = Number(raw)
-                    if (!Number.isNaN(parsed)) setLegsTarget(parsed)
-                  }}
-                />
-                <button
-                  type="button"
-                  tabIndex={isPractice ? -1 : undefined}
-                  className={clsx(
-                    styles.segmentBtn,
-                    mode === 'first-to' && styles.segmentActive,
-                  )}
-                  onClick={() => setMode('first-to')}
-                >
-                  First to
-                </button>
-                <button
-                  type="button"
-                  tabIndex={isPractice ? -1 : undefined}
-                  className={clsx(
-                    styles.segmentBtn,
-                    mode === 'best-of' && styles.segmentActive,
-                  )}
-                  onClick={() => setMode('best-of')}
-                >
-                  Best of
-                </button>
-              </div>
+              <label className={styles.formatLabel}>
+                Sets
+                <div className={styles.segment}>
+                  <input
+                    type="number"
+                    className={styles.legsInput}
+                    aria-label="Sets"
+                    min={1}
+                    max={21}
+                    step={setsMode === 'best-of' ? 2 : 1}
+                    value={setsTarget}
+                    tabIndex={isPractice ? -1 : undefined}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') {
+                        setSetsTarget('')
+                        return
+                      }
+                      const parsed = Number(raw)
+                      if (!Number.isNaN(parsed)) setSetsTarget(parsed)
+                    }}
+                  />
+                  <button
+                    type="button"
+                    tabIndex={isPractice ? -1 : undefined}
+                    className={clsx(
+                      styles.segmentBtn,
+                      setsMode === 'first-to' && styles.segmentActive,
+                    )}
+                    onClick={() => setSetsMode('first-to')}
+                  >
+                    First to
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={isPractice ? -1 : undefined}
+                    className={clsx(
+                      styles.segmentBtn,
+                      setsMode === 'best-of' && styles.segmentActive,
+                    )}
+                    onClick={() => {
+                      setSetsMode('best-of')
+                      setSetsTarget((current) =>
+                        typeof current === 'number' && current % 2 === 0
+                          ? Math.min(21, current + 1)
+                          : current,
+                      )
+                    }}
+                  >
+                    Best of
+                  </button>
+                </div>
+              </label>
+              <label className={styles.formatLabel}>
+                Legs per set
+                <div className={styles.segment}>
+                  <input
+                    type="number"
+                    className={styles.legsInput}
+                    aria-label="Legs"
+                    min={1}
+                    max={21}
+                    step={mode === 'best-of' ? 2 : 1}
+                    value={legsTarget}
+                    tabIndex={isPractice ? -1 : undefined}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      if (raw === '') {
+                        setLegsTarget('')
+                        return
+                      }
+                      const parsed = Number(raw)
+                      if (!Number.isNaN(parsed)) setLegsTarget(parsed)
+                    }}
+                  />
+                  <button
+                    type="button"
+                    tabIndex={isPractice ? -1 : undefined}
+                    className={clsx(
+                      styles.segmentBtn,
+                      mode === 'first-to' && styles.segmentActive,
+                    )}
+                    onClick={() => setMode('first-to')}
+                  >
+                    First to
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={isPractice ? -1 : undefined}
+                    className={clsx(
+                      styles.segmentBtn,
+                      mode === 'best-of' && styles.segmentActive,
+                    )}
+                    onClick={() => {
+                      setMode('best-of')
+                      setLegsTarget((current) =>
+                        typeof current === 'number' && current % 2 === 0
+                          ? Math.min(21, current + 1)
+                          : current,
+                      )
+                    }}
+                  >
+                    Best of
+                  </button>
+                </div>
+              </label>
             </fieldset>
 
             <fieldset
@@ -499,11 +576,7 @@ const MatchSetupForm = ({ className }: MatchSetupFormProps) => {
         className={styles.submit}
         tabIndex={isReady ? undefined : -1}
       >
-        {is121
-          ? 'Start 121'
-          : isPractice
-            ? 'Start practice'
-            : 'Start match'}
+        {is121 ? 'Start 121' : isPractice ? 'Start practice' : 'Start match'}
       </button>
     </form>
   )

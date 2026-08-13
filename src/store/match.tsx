@@ -98,10 +98,14 @@ function normalizeStoredMatch(raw: unknown): MatchState | null {
       startingScore: gameType === '121' ? 121 : (config.startingScore ?? 501),
       mode: gameType === '121' ? 'first-to' : (config.mode ?? 'best-of'),
       legsTarget: gameType === '121' ? 1 : (config.legsTarget ?? 5),
+      setsMode:
+        gameType === '121' ? 'first-to' : (config.setsMode ?? 'first-to'),
+      setsTarget: gameType === '121' ? 1 : (config.setsTarget ?? 1),
       firstThrower: gameType === '121' ? 0 : (config.firstThrower ?? 0),
       game121Increment,
       game121DartsAllowed,
     },
+    setsWon: state.setsWon ?? [0, 0],
     game121: gameType === '121' ? (state.game121 ?? null) : null,
   } as MatchState
 }

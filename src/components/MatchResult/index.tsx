@@ -54,14 +54,22 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
     )
   }
 
-  const needed = legsToWin(match.config)
+  const legsNeeded = legsToWin(match.config)
+  const setsNeeded = legsToWin({
+    mode: match.config.setsMode,
+    legsTarget: match.config.setsTarget,
+  })
   const isPractice = match.config.playMode === 'practice'
   const is121 = match.config.gameType === '121' && match.game121 !== null
-  const decidingLeg =
+  const decidingSet =
     !is121 &&
     !isPractice &&
     legWinner !== null &&
-    match.legsWon[legWinner] + 1 >= needed
+    match.legsWon[legWinner] + 1 >= legsNeeded
+  const decidingMatch =
+    decidingSet &&
+    legWinner !== null &&
+    match.setsWon[legWinner] + 1 >= setsNeeded
   const isPendingCheckout = matchWinner === null && legWinner !== null
 
   const winnerIndex: PlayerIndex = (matchWinner ?? legWinner) as PlayerIndex
@@ -145,7 +153,7 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
                   ·
                 </span>
                 <span className={styles.eyebrowScore}>
-                  {match.legsWon[0]}–{match.legsWon[1]}
+                  {match.setsWon[0]}–{match.setsWon[1]}
                 </span>
               </span>
               <span className={styles.titleDivider} aria-hidden="true">
@@ -201,12 +209,12 @@ const MatchResult = ({ match, className }: MatchResultProps) => {
           <h2 className={styles.title}>
             <span className={styles.eyebrowInline}>
               {is121 ? '121 cleared' : 'Game shot'}
-              {!isPractice && decidingLeg ? (
+              {!isPractice && decidingSet ? (
                 <>
                   <span className={styles.eyebrowSep} aria-hidden="true">
                     ·
                   </span>
-                  Match point
+                  {decidingMatch ? 'Match point' : 'Set point'}
                 </>
               ) : null}
             </span>
