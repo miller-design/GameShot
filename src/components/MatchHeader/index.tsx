@@ -85,8 +85,15 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
   return (
     <header className={clsx(styles.root, className)}>
       {renderName(0, 'left', names[0])}
-      <div className={styles.legs} aria-label="Set and leg score">
-        Sets {sets0}–{sets1} · Legs {legs0}–{legs1}
+      <div
+        className={styles.legs}
+        aria-label={`Sets ${sets0}–${sets1}, legs ${legs0}–${legs1}`}
+      >
+        <span className={styles.setScore}>{sets0}</span>
+        <span className={styles.legScore}>
+          {legs0}–{legs1}
+        </span>
+        <span className={styles.setScore}>{sets1}</span>
       </div>
       {renderName(1, 'right', names[1])}
     </header>

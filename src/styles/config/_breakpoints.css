@@ -7,5 +7,5 @@
 /* Narrow portrait phones — fewer history rows, more room for the score pad. */
 @custom-media --portrait-compact (max-width: 639px) and (orientation: portrait);
 
-/* Short landscape viewports (phones / tablets) — board uses a side-by-side layout. */
-@custom-media --landscape-board (orientation: landscape) and (max-height: 56.25rem);
+/* Tablets and larger in landscape — scores sit beside the keypad. */
+@custom-media --landscape-board (orientation: landscape) and (min-width: 640px);

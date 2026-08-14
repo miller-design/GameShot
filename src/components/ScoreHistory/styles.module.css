@@ -136,4 +136,31 @@
   & .bust {
     color: var(--color-bust);
   }
+
+  /* On phones the current remaining scores are clearer than duplicate To Go columns. */
+  @media (--portrait-compact) {
+    &:not(.practice) {
+      & .head,
+      & .row {
+        grid-template-columns: minmax(0, 1fr) 2.25rem minmax(0, 1fr);
+      }
+
+      & .head > div:nth-child(2),
+      & .head > div:nth-child(5),
+      & .row > .cell:nth-child(2),
+      & .row > .cell:nth-child(5) {
+        display: none;
+      }
+    }
+
+    & .cell,
+    & .scoredButton {
+      font-size: var(--fs-lg);
+    }
+
+    & .spine {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-medium);
+    }
+  }
 }

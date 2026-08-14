@@ -12,8 +12,14 @@ import type { MatchState } from '#/types/match'
 
 import styles from './styles.module.css'
 
-/** Throw rows kept in view; empty rows pad the grid. */
-const VISIBLE_THROW_ROWS = 4
+const COMPACT_PORTRAIT_QUERY = '(max-width: 639px) and (orientation: portrait)'
+const LARGE_SCREEN_QUERY = '(min-width: 1024px)'
+
+function visibleThrowRowCount() {
+  if (window.matchMedia(COMPACT_PORTRAIT_QUERY).matches) return 3
+  if (window.matchMedia(LARGE_SCREEN_QUERY).matches) return 5
+  return 4
+}
 
 type ScoreHistoryProps = {
   match: MatchState
@@ -75,8 +81,7 @@ function previewEditInput(
 
 /**
  * Target-style scored / to-go history grid with dart-count spine.
- * Three visible throw rows share a measured row height so the score zone stays
- * visually stable.
+ * The responsive visible row count fills the score zone while older visits scroll.
  *
  * @param props.match - Full match state
  * @param props.className - Optional class on the table wrapper
@@ -94,7 +99,7 @@ const ScoreHistory = ({
 }: ScoreHistoryProps) => {
   const { currentLeg } = match
   const isPractice = match.config.playMode === 'practice'
-  const visibleThrowRows = VISIBLE_THROW_ROWS
+  const [visibleThrowRows, setVisibleThrowRows] = useState(4)
   const rows = buildHistoryRows(currentLeg)
   const nextRow = nextInputRowIndex(currentLeg)
   const thrower = currentLeg.currentPlayer
@@ -131,6 +136,38 @@ const ScoreHistory = ({
       p1: null,
     })
   }
+
+  useEffect(() => {
+    const queries = [
+      window.matchMedia(COMPACT_PORTRAIT_QUERY),
+      window.matchMedia(LARGE_SCREEN_QUERY),
+    ]
+    const updateVisibleRows = () => setVisibleThrowRows(visibleThrowRowCount())
+
+    updateVisibleRows()
+    queries.forEach((query) =>
+      query.addEventListener('change', updateVisibleRows),
+    )
+    return () =>
+      queries.forEach((query) =>
+        query.removeEventListener('change', updateVisibleRows),
+      )
+  }, [])
+
+  useEffect(() => {
+    const throwArea = throwAreaRef.current
+    if (!throwArea) return
+    const safeThrowArea = throwArea
+
+    function measureThrowRows() {
+      setThrowRowHeight(safeThrowArea.clientHeight / visibleThrowRows)
+    }
+
+    measureThrowRows()
+    const observer = new ResizeObserver(measureThrowRows)
+    observer.observe(throwArea)
+    return () => observer.disconnect()
+  }, [visibleThrowRows])
   while (displayRows.length <= nextRow) {
     displayRows.push({
       dartCount: (displayRows.length + 1) * 3,
@@ -138,30 +175,6 @@ const ScoreHistory = ({
       p1: null,
     })
   }
-
-  useEffect(() => {
-    const throwArea = throwAreaRef.current
-    if (!throwArea) return
-    const safeThrowArea = throwArea
-
-    /**
-     * Sizes throw rows so the visible set evenly fills the throw area.
-     *
-     * @example
-     * measureThrowRows()
-     */
-    function measureThrowRows() {
-      const rowHeight = safeThrowArea.clientHeight / visibleThrowRows
-      setThrowRowHeight(rowHeight)
-    }
-
-    measureThrowRows()
-
-    const observer = new ResizeObserver(measureThrowRows)
-    observer.observe(throwArea)
-
-    return () => observer.disconnect()
-  }, [visibleThrowRows])
 
   useEffect(() => {
     const el = throwAreaRef.current
@@ -204,7 +217,6 @@ const ScoreHistory = ({
           const isNextP1 = !isPractice && thrower === 1 && index === nextRow
           const highlightP0 = canHighlight && isNextP0
           const highlightP1 = canHighlight && isNextP1
-          const showSpine = row.p0 !== null || (!isPractice && row.p1 !== null)
           const p0AbsIndex = row.p0 ? (p0VisitAbsIndices[index] ?? null) : null
           const p1AbsIndex = row.p1 ? (p1VisitAbsIndices[index] ?? null) : null
           const p0EditPreview =
@@ -271,7 +283,7 @@ const ScoreHistory = ({
               </div>
               {isPractice ? (
                 <div className={clsx(styles.cell, styles.spine)} role="cell">
-                  {showSpine ? row.dartCount : ''}
+                  {row.dartCount}
                 </div>
               ) : null}
               <div
@@ -291,7 +303,7 @@ const ScoreHistory = ({
               {!isPractice ? (
                 <>
                   <div className={clsx(styles.cell, styles.spine)} role="cell">
-                    {showSpine ? row.dartCount : ''}
+                    {row.dartCount}
                   </div>
                   <div
                     className={clsx(

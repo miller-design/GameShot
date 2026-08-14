@@ -12,6 +12,10 @@
     grid-template-columns: 1fr;
   }
 
+  @media (--landscape-board) {
+    box-sizing: border-box;
+  }
+
   & .panel {
     container-type: size;
     display: flex;
@@ -30,6 +34,11 @@
       border-color 0.2s ease,
       box-shadow 0.2s ease,
       color 0.2s ease;
+
+    @media (--portrait-compact) {
+      padding-block: 0.35rem;
+      padding-inline: 0.4rem;
+    }
   }
 
   & .active {
@@ -51,6 +60,10 @@
     font-variant-numeric: tabular-nums;
     line-height: 1;
     letter-spacing: 0;
+
+    @media (--portrait-compact) {
+      font-size: clamp(var(--fs-xl), min(76cqh, 36cqw), 8rem);
+    }
   }
 }
 
