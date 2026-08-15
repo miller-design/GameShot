@@ -139,6 +139,42 @@ export function createMatch(config: MatchConfig): MatchState {
 }
 
 /**
+ * Chooses who throws first on the current empty leg.
+ * Ignored once a visit is scored, so mid-leg turns cannot be skipped.
+ *
+ * @param state - Current match
+ * @param player - Player who should open this leg
+ *
+ * @example
+ * setLegThrower(state, 1)
+ */
+export function setLegThrower(
+  state: MatchState,
+  player: PlayerIndex,
+): MatchState {
+  if (state.config.playMode !== 'matchplay') return state
+  if (state.config.gameType === '121') return state
+  if (state.matchWinner !== null) return state
+  if (state.pendingLegWinner !== null) return state
+  if (state.currentLeg.visits.length > 0) return state
+  if (
+    state.currentLeg.firstThrower === player &&
+    state.currentLeg.currentPlayer === player
+  ) {
+    return state
+  }
+
+  return {
+    ...state,
+    currentLeg: {
+      ...state.currentLeg,
+      firstThrower: player,
+      currentPlayer: player,
+    },
+  }
+}
+
+/**
  * Whether a visit score is a valid human/bot entry: integer 0–180 that can
  * be thrown with ≤3 darts on a standard board.
  *

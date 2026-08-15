@@ -14,7 +14,7 @@ import {
   previewEditVisit,
 } from '#/lib/darts/scoring'
 import { useMatch } from '#/store/match'
-import type { MatchState } from '#/types/match'
+import type { MatchState, PlayerIndex } from '#/types/match'
 
 import styles from './styles.module.css'
 
@@ -40,6 +40,7 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
     undo,
     clearMatch,
     clearBustFlag,
+    setLegThrower,
   } = useMatch()
   const navigate = useNavigate()
   const [statsOpen, setStatsOpen] = useState(false)
@@ -200,10 +201,32 @@ const MatchBoard = ({ match }: MatchBoardProps) => {
     window.requestAnimationFrame(clearFocus)
   }
 
+  const canPickThrower =
+    match.config.playMode === 'matchplay' &&
+    match.config.gameType !== '121' &&
+    match.matchWinner === null &&
+    match.pendingLegWinner === null &&
+    match.currentLeg.visits.length === 0
+
+  /**
+   * Chooses who throws first on an empty leg (match start or new set/leg).
+   *
+   * @param player - Player index tapped in the header
+   *
+   * @example
+   * handleSelectThrower(1)
+   */
+  function handleSelectThrower(player: PlayerIndex) {
+    setLegThrower(player)
+  }
+
   return (
     <div className={styles.root}>
       <section className={styles.scoresZone} aria-label="Scores">
-        <MatchHeader match={match} />
+        <MatchHeader
+          match={match}
+          onSelectThrower={canPickThrower ? handleSelectThrower : undefined}
+        />
         <ScoreHistory
           match={match}
           editingVisitIndex={editingVisitIndex}

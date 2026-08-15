@@ -7,6 +7,7 @@ import styles from './styles.module.css'
 type MatchHeaderProps = {
   match: MatchState
   className?: string
+  onSelectThrower?: (player: PlayerIndex) => void
 }
 
 /**
@@ -14,11 +15,16 @@ type MatchHeaderProps = {
  *
  * @param props.match - Full match state
  * @param props.className - Optional class on the header
+ * @param props.onSelectThrower - When set, tapping a name chooses who throws first
  *
  * @example
- * <MatchHeader match={match} />
+ * <MatchHeader match={match} onSelectThrower={setLegThrower} />
  */
-const MatchHeader = ({ match, className }: MatchHeaderProps) => {
+const MatchHeader = ({
+  match,
+  className,
+  onSelectThrower,
+}: MatchHeaderProps) => {
   const thrower = match.currentLeg.currentPlayer
   const names = match.config.playerNames
   const [legs0, legs1] = match.legsWon
@@ -45,22 +51,38 @@ const MatchHeader = ({ match, className }: MatchHeaderProps) => {
       thrower === player &&
       match.pendingLegWinner === null &&
       match.matchWinner === null
-    return (
-      <div
-        className={clsx(
-          styles.name,
-          align === 'left' ? styles.left : styles.right,
-          active && styles.active,
-        )}
-      >
+    const classNameName = clsx(
+      styles.name,
+      align === 'left' ? styles.left : styles.right,
+      active && styles.active,
+      onSelectThrower && styles.tappable,
+    )
+    const content = (
+      <>
         {active && (
           <span className={styles.marker} aria-hidden="true">
             *
           </span>
         )}
         <span>{label}</span>
-      </div>
+      </>
     )
+
+    if (onSelectThrower) {
+      return (
+        <button
+          type="button"
+          className={classNameName}
+          aria-pressed={active}
+          aria-label={`${label} throws first`}
+          onClick={() => onSelectThrower(player)}
+        >
+          {content}
+        </button>
+      )
+    }
+
+    return <div className={classNameName}>{content}</div>
   }
 
   if (is121) {

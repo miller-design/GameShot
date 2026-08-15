@@ -16,7 +16,7 @@ function Home() {
     <main className={styles.page}>
       <header className={styles.setupHeader}>
         <p className={styles.eyebrow}>New match</p>
-        <p className={styles.lede}>Set up matchplay or solo practice.</p>
+        <p className={styles.lede}>Pick a game and who is playing.</p>
       </header>
       <div className={styles.setupStage}>
         <MatchSetupForm />

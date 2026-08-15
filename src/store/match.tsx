@@ -14,6 +14,7 @@ import {
   editVisit as editVisitPure,
   submitVisit as submitVisitPure,
   setPendingLegCheckoutDartsUsed as setPendingLegCheckoutDartsUsedPure,
+  setLegThrower as setLegThrowerPure,
   undoVisit as undoVisitPure,
 } from '#/lib/darts/scoring'
 import type {
@@ -22,6 +23,7 @@ import type {
   MatchConfig,
   MatchState,
   PlayMode,
+  PlayerIndex,
 } from '#/types/match'
 
 const STORAGE_KEY = 'gameshot-match'
@@ -35,6 +37,7 @@ type MatchContextValue = {
   undo: () => void
   confirmLeg: () => void
   setPendingLegCheckoutDartsUsed: (dartsUsed: 1 | 2 | 3) => void
+  setLegThrower: (player: PlayerIndex) => void
   clearMatch: () => void
   clearBustFlag: () => void
 }
@@ -255,6 +258,21 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   }, [])
 
   /**
+   * Sets who throws first on the current empty leg.
+   *
+   * @param player - Player index 0 or 1
+   *
+   * @example
+   * setLegThrower(1)
+   */
+  const setLegThrower = useCallback((player: PlayerIndex) => {
+    setMatch((prev) => {
+      if (!prev) return prev
+      return setLegThrowerPure(prev, player)
+    })
+  }, [])
+
+  /**
    * Clears the active match (exit / new match).
    *
    * @example
@@ -287,6 +305,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       undo,
       confirmLeg,
       setPendingLegCheckoutDartsUsed,
+      setLegThrower,
       clearMatch,
       clearBustFlag,
     }),
@@ -299,6 +318,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       undo,
       confirmLeg,
       setPendingLegCheckoutDartsUsed,
+      setLegThrower,
       clearMatch,
       clearBustFlag,
     ],

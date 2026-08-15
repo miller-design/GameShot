@@ -24,6 +24,25 @@
     color: var(--color-text-muted);
     min-width: 0;
 
+    &:is(button) {
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      max-width: 100%;
+    }
+
+    &.tappable:hover {
+      color: var(--color-text);
+    }
+
+    &.tappable:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--color-focus-ring);
+      border-radius: 0.2rem;
+    }
+
     & span:last-child {
       overflow: hidden;
       text-overflow: ellipsis;

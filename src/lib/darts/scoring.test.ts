@@ -13,6 +13,7 @@ import {
   submitVisit,
   undoVisit,
   setPendingLegCheckoutDartsUsed,
+  setLegThrower,
 } from './scoring'
 import type { MatchConfig } from '#/types/match'
 
@@ -325,6 +326,42 @@ describe('submitVisit / confirmLeg / undoVisit', () => {
     state = undoVisit(state)
     expect(state.pendingLegWinner).toBe(null)
     expect(state.currentLeg.remaining[0]).toBe(40)
+  })
+})
+
+describe('setLegThrower', () => {
+  it('lets the non-default player open an empty leg', () => {
+    const state = setLegThrower(createMatch(baseConfig), 1)
+    expect(state.currentLeg.firstThrower).toBe(1)
+    expect(state.currentLeg.currentPlayer).toBe(1)
+  })
+
+  it('ignores a change after a visit is recorded', () => {
+    let state = submitVisit(createMatch(baseConfig), 60)
+    state = setLegThrower(state, 1)
+    expect(state.currentLeg.firstThrower).toBe(0)
+    expect(state.currentLeg.currentPlayer).toBe(1)
+  })
+
+  it('can override thrower at the start of a new set', () => {
+    let state = createMatch({
+      ...baseConfig,
+      legsTarget: 1,
+      setsTarget: 2,
+    })
+    state = {
+      ...state,
+      currentLeg: {
+        ...state.currentLeg,
+        remaining: [40, 501],
+      },
+    }
+    state = confirmLeg(submitVisit(state, 40))
+    expect(state.currentLeg.firstThrower).toBe(1)
+
+    state = setLegThrower(state, 0)
+    expect(state.currentLeg.firstThrower).toBe(0)
+    expect(state.currentLeg.currentPlayer).toBe(0)
   })
 })
 
